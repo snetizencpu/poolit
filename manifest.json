@@ -1,0 +1,25 @@
+{
+  "name": "POOLIT • Social Sports Predictor & Group Kitty Tracker",
+  "short_name": "POOLIT",
+  "description": "Free-to-use social sports score predictor for private friend groups. Predict up to 3 Exact Scores or up to 5 Outright Results (1X2).",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#059669",
+  "orientation": "portrait",
+  "categories": ["sports", "entertainment", "social"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

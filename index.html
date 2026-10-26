@@ -1,0 +1,2249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="POOLIT" />
+  <meta name="theme-color" content="#059669" />
+  <link rel="manifest" href="manifest.json" />
+  <title>POOLIT • Social Sports Predictor & Group Kitty Tracker</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white text-slate-900 antialiased p-4 md:p-6">
+  <div class="max-w-7xl mx-auto space-y-6">
+    <!-- Top Bar: App Identity, View Switcher & Active User Persona Selector -->
+    <div class="bg-white border border-slate-200 rounded-2xl p-4 md:p-5 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="h-11 px-3 rounded-xl bg-emerald-600 text-white font-black tracking-tight flex items-center justify-center text-sm shadow-sm">
+          POOLIT
+        </div>
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <h1 class="text-lg font-black tracking-tight text-slate-900">
+              POOLIT
+            </h1>
+            <span id="header-mode-pill" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              100% Pot Payout • 0% Commission
+            </span>
+          </div>
+          <p id="header-subtitle" class="text-xs text-slate-500 mt-0.5">
+            Social Sports Pool • Exact Score (1–3 Games) or Outright Result 1X2 (1–5 Games) • Custom Wager
+          </p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- Phase 1 (Free + Ads) vs Phase 2 (Float Treasury) Switcher -->
+        <div class="inline-flex rounded-xl border border-indigo-200 bg-indigo-50/70 p-1">
+          <button
+            id="phase-btn-1"
+            onclick="setLaunchPhase('PHASE_1_FREE_ADS')"
+            class="px-3 py-1.5 rounded-lg text-xs font-extrabold transition"
+          >
+            🚀 Phase 1: Free + Ads (£0 Licence)
+          </button>
+          <button
+            id="phase-btn-2"
+            onclick="setLaunchPhase('PHASE_2_FLOAT_TREASURY')"
+            class="px-3 py-1.5 rounded-lg text-xs font-extrabold transition"
+          >
+            🏦 Phase 2: Wallet + Float Treasury
+          </button>
+        </div>
+
+        <div class="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-1">
+          <button
+            id="tab-mobile"
+            onclick="switchView('MOBILE_DEMO')"
+            class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition"
+          >
+            📱 iPhone Demo App (App Store Ready)
+          </button>
+          <button
+            id="tab-pool"
+            onclick="switchView('POOL')"
+            class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition"
+          >
+            ⚽ Full Pool & Admin Builder
+          </button>
+          <button
+            id="tab-treasury"
+            onclick="switchView('TREASURY')"
+            class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition"
+          >
+            🏛️ Admin Revenue (<span id="nav-float-badge">£18,900.00</span>)
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5">
+          <span class="text-xs text-slate-500 font-medium">Active User:</span>
+          <select
+            id="user-selector"
+            onchange="changeActiveUser(this.value)"
+            class="bg-transparent text-xs font-bold text-slate-900 focus:outline-none"
+          ></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alert Banner -->
+    <div id="alert-banner" class="hidden rounded-xl border px-4 py-3 text-xs font-semibold flex items-center justify-between">
+      <span id="alert-text"></span>
+      <button onclick="hideAlert()" class="underline text-xs ml-4">Dismiss</button>
+    </div>
+
+    <!-- PHASE 1 MATCHDAY AD BANNER & ZERO-LICENCE ROADMAP BAR -->
+    <div id="phase1-ad-slot" class="hidden rounded-2xl border border-amber-300 bg-gradient-to-r from-amber-50 via-white to-emerald-50 p-4 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+        <div class="flex items-start gap-3">
+          <span class="px-2 py-0.5 rounded bg-amber-200 text-amber-900 font-mono text-xs font-extrabold shrink-0 mt-0.5">
+            AD • SPONSORED
+          </span>
+          <div>
+            <div class="text-xs font-extrabold text-slate-900">
+              🍕 Matchday Sponsor: 40% Off Domino's Group Bundles During Saturday 3PM Kickoffs! • <span class="underline text-emerald-700 cursor-pointer" onclick="simulateMatchweekAdClick()">Tap to Simulate Ad Impression / Click (+£1,350 Matchweek Ad Payout)</span>
+            </div>
+            <p class="text-xs text-slate-600 mt-0.5">
+              <strong>Phase 1 Launch Mode Active (100% Free-to-Use + Ads • £0 UKGC Licence Required):</strong> No subscription paywall. Friends settle pots peer-to-peer with their Group Treasurer while POOLIT monetizes 50,000 users via matchday ads (<strong id="phase1-ad-rev-inline">£18,900.00</strong> earned toward £25,000 Phase 2 UKGC Licence target!).
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button
+            onclick="simulateMatchweekAdClick()"
+            class="px-3.5 py-2 rounded-xl bg-amber-500 text-slate-950 text-xs font-extrabold hover:bg-amber-400 transition shadow-sm"
+          >
+            Simulate +1 Matchweek Ad Revenue (+£1,350)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 0: PHASE 1 IPHONE DEMO APP (100% APPLE APP STORE & GOOGLE PLAY READY) -->
+    <div id="view-mobile-demo" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <!-- Left Column: Interactive iPhone 16 Pro App Store Build -->
+      <div class="lg:col-span-5 flex justify-center">
+        <div class="w-full max-w-[390px] rounded-[42px] border-[10px] border-slate-900 bg-white shadow-2xl overflow-hidden relative flex flex-col min-h-[760px] justify-between">
+          <!-- Kickoff Interstitial Sponsor Ad Modal (Inside Phone Screen) -->
+          <div id="mobile-interstitial-ad" class="hidden absolute inset-0 z-40 bg-slate-950/95 text-white p-6 flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <span class="px-2.5 py-0.5 rounded bg-amber-400 text-slate-950 font-mono text-xs font-black">
+                MATCHDAY SPONSOR AD
+              </span>
+              <button
+                onclick="closeMobileInterstitialAd()"
+                class="px-3 py-1 rounded-full bg-white/15 text-white text-xs font-bold hover:bg-white/25"
+              >
+                Skip & Reveal Slips ✕
+              </button>
+            </div>
+
+            <div class="text-center space-y-3 my-auto">
+              <div class="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500 text-slate-950 text-2xl font-black shadow-lg">
+                🍕
+              </div>
+              <div class="text-xs font-extrabold uppercase tracking-widest text-amber-400">
+                Official Kickoff Reveal Partner
+              </div>
+              <h3 class="text-xl font-black leading-tight">
+                Half-Time Group Feast: 40% Off Domino&apos;s Orders Over £25
+              </h3>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                All friend prediction slips for <strong>North London Matchday Syndicate</strong> are now locked &amp; ready to reveal!
+              </p>
+              <button
+                onclick="simulateMatchweekAdClick(1); closeMobileInterstitialAd();"
+                class="w-full py-3 rounded-2xl bg-amber-400 text-slate-950 text-xs font-black shadow-md hover:bg-amber-300 transition"
+              >
+                Claim 40% Matchday Code (+£1,350 Ad Rev)
+              </button>
+            </div>
+
+            <div class="text-center text-[11px] text-slate-400">
+              Phase 1 Ad Engine • £18.00 eCPM Kickoff Reveal Placement
+            </div>
+          </div>
+
+          <!-- Top iOS Status Bar + App Header -->
+          <div>
+            <div class="bg-white px-6 pt-2.5 pb-1 flex items-center justify-between text-[11px] font-bold text-slate-900">
+              <span>9:41</span>
+              <div class="h-4 w-24 rounded-full bg-slate-900"></div>
+              <span>5G • 100%</span>
+            </div>
+
+            <div class="px-4 py-3 border-b border-slate-200 bg-white flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <div class="h-8 px-2.5 rounded-lg bg-emerald-600 text-white font-black text-xs flex items-center justify-center">
+                  POOLIT
+                </div>
+                <div>
+                  <div class="text-xs font-black text-slate-900 leading-none">North London Syndicate</div>
+                  <div class="text-[11px] text-emerald-700 font-bold mt-0.5">Code: NLMS-100 • Free Social League</div>
+                </div>
+              </div>
+              <button
+                onclick="shareWhatsAppInvite()"
+                class="px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-extrabold hover:bg-emerald-100"
+              >
+                📲 Invite
+              </button>
+            </div>
+
+            <!-- Compact Matchday Sponsor Banner inside Phone -->
+            <div
+              onclick="simulateMatchweekAdClick(1)"
+              class="mx-3 mt-2.5 rounded-xl border border-amber-300 bg-amber-50/90 px-3 py-2 flex items-center justify-between cursor-pointer hover:bg-amber-100/80 transition"
+            >
+              <div class="flex items-center gap-2">
+                <span class="px-1.5 py-0.5 rounded bg-amber-300 text-amber-950 font-mono text-[10px] font-black">AD</span>
+                <span class="text-[11px] font-bold text-slate-900">🍺 Guinness 0.0 • Official Matchday Predictor Partner</span>
+              </div>
+              <span class="text-[10px] font-extrabold text-emerald-700">Tap +£1.3k</span>
+            </div>
+          </div>
+
+          <!-- Dynamic Phone Screen Content -->
+          <div id="mobile-screen-body" class="flex-1 overflow-y-auto px-3.5 py-3 space-y-3"></div>
+
+          <!-- Mandatory Apple Guideline 5.3 Mini Footer + Bottom Tab Bar -->
+          <div class="border-t border-slate-200 bg-white">
+            <div class="px-3 py-1 bg-slate-50 text-[10px] text-slate-500 text-center border-b border-slate-100">
+              Free-to-play predictor • No in-app gambling • Apple Inc. is not a sponsor
+            </div>
+            <div class="grid grid-cols-4 gap-1 px-2 py-2" id="mobile-bottom-nav"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: App Store Readiness Checklist & Instant Demo Controls -->
+      <div class="lg:col-span-7 space-y-5">
+        <div class="bg-white border-2 border-emerald-500 rounded-2xl p-5 shadow-sm space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 text-xs font-extrabold">
+              ✓ PHASE 1 APP STORE &amp; MOBILE DEMO BUILD READY
+            </span>
+            <span class="text-xs font-mono font-bold text-slate-500">Bundle ID: co.uk.poolit.app</span>
+          </div>
+
+          <h2 class="text-xl font-black text-slate-900">
+            Why This Phase 1 Build Passes Apple App Store &amp; Google Play Review (£0 UKGC Licence)
+          </h2>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            If an Apple Reviewer sees real-money deposit/withdrawal buttons without a UK Gambling Commission licence, they reject the app under <strong>Guideline 5.3.4</strong>. This <strong>Phase 1 App Store Build</strong> strips out all regulated banking rails from the consumer UI so it passes review as a <strong>100% Free Social Sports Predictor &amp; Group Kitty Tracker</strong>.
+          </p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3.5">
+              <div class="text-xs font-extrabold text-emerald-900">1. Zero In-App Gambling Rails (Guideline 5.3)</div>
+              <p class="text-xs text-slate-600 mt-1">
+                No bank deposits, no entry paywall, and no real-money payouts inside the app. Friends track their private group kitty via the <strong>Group Treasurer P2P Checklist</strong>.
+              </p>
+            </div>
+
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3.5">
+              <div class="text-xs font-extrabold text-emerald-900">2. Apple Non-Sponsor Disclaimer (Guideline 5.3.1)</div>
+              <p class="text-xs text-slate-600 mt-1">
+                Explicitly displays in the app footer &amp; legal tab that <em>&ldquo;Apple Inc. and Google LLC are not sponsors of, or affiliated with, any group prediction league.&rdquo;</em>
+              </p>
+            </div>
+
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3.5">
+              <div class="text-xs font-extrabold text-emerald-900">3. In-App Account Deletion (Guideline 5.1.1v)</div>
+              <p class="text-xs text-slate-600 mt-1">
+                Includes the mandatory 1-tap <strong>&ldquo;Delete My Account &amp; Data&rdquo;</strong> flow inside the Legal/Settings tab (Apple rejects any social app missing this).
+              </p>
+            </div>
+
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3.5">
+              <div class="text-xs font-extrabold text-emerald-900">4. Native PWA + Capacitor iOS/Android Config</div>
+              <p class="text-xs text-slate-600 mt-1">
+                Configured with <code>public/manifest.json</code> (instant iPhone Home Screen install) and <code>capacitor.config.ts</code> for Xcode TestFlight &amp; App Store upload.
+              </p>
+            </div>
+          </div>
+
+          <!-- Interactive Demo Scenario Buttons -->
+          <div class="pt-3 border-t border-slate-200 space-y-2.5">
+            <div class="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+              ⚡ Test Interactive Phone Demo Flows Right Now:
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button
+                onclick="setMobileTab('SLATE')"
+                class="px-3.5 py-2 rounded-xl bg-emerald-600 text-white text-xs font-extrabold hover:bg-emerald-700 transition shadow-sm"
+              >
+                1. Pick Scores in Phone (Free Entry)
+              </button>
+              <button
+                onclick="triggerMobileKickoffWithAd()"
+                class="px-3.5 py-2 rounded-xl bg-amber-500 text-slate-950 text-xs font-extrabold hover:bg-amber-400 transition shadow-sm"
+              >
+                2. Trigger Kickoff + Sponsor Interstitial Ad
+              </button>
+              <button
+                onclick="setMobileTab('KITTY')"
+                class="px-3.5 py-2 rounded-xl border border-indigo-300 bg-indigo-50 text-indigo-800 text-xs font-extrabold hover:bg-indigo-100 transition"
+              >
+                3. Open P2P Group Treasurer Kitty Checklist
+              </button>
+              <button
+                onclick="shareWhatsAppInvite()"
+                class="px-3.5 py-2 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs font-extrabold hover:bg-emerald-100 transition"
+              >
+                4. Test WhatsApp Group Invite Link
+              </button>
+              <button
+                onclick="setMobileTab('LEGAL')"
+                class="px-3.5 py-2 rounded-xl border border-slate-300 bg-slate-50 text-slate-700 text-xs font-bold hover:bg-slate-100 transition"
+              >
+                5. View Apple App Store Legal &amp; Delete Account Tab
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- How to Put This Demo on Your iPhone Today (3-Step Box) -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
+          <h3 class="text-base font-extrabold text-slate-900">
+            📲 How to Install This Demo on Your iPhone &amp; Send to Mates Today (£0 Cost)
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+              <div class="font-extrabold text-slate-900">Option A: Instant Phone Home Screen (PWA)</div>
+              <p class="text-slate-600 mt-1">
+                Deploy the Next.js folder to <strong>Vercel (Free)</strong>. Open the URL in Safari on your iPhone &rarr; tap <strong>Share &rarr; Add to Home Screen</strong>. Launches full-screen with the POOLIT icon!
+              </p>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+              <div class="font-extrabold text-slate-900">Option B: Apple TestFlight Beta</div>
+              <p class="text-slate-600 mt-1">
+                Run <code>npx cap add ios</code> using the included <code>capacitor.config.ts</code> and upload to <strong>Apple TestFlight</strong> (£79/yr Apple Dev account) to invite up to 10,000 beta testers via link.
+              </p>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+              <div class="font-extrabold text-slate-900">Option C: Public App Store Launch</div>
+              <p class="text-slate-600 mt-1">
+                Submit the Phase 1 build under category <strong>Sports (Free)</strong> using the Reviewer Notes in <code>APP_STORE_LAUNCH_CHECKLIST.md</code>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 1: SUPER ADMIN TREASURY & FLOAT YIELD DASHBOARD -->
+    <div id="view-treasury" class="hidden space-y-6">
+      <!-- PHASE 1 AD MONETIZATION & PHASE 2 LICENCE SELF-FUNDING TRACKER -->
+      <div id="phase1-treasury-card" class="bg-white border-2 border-amber-300 rounded-2xl p-5 shadow-sm space-y-4">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
+              🚀 PHASE 1 REVENUE ENGINE • FREE-TO-USE + MATCHDAY ADS (£0 UKGC LICENCE REQUIRED)
+            </span>
+            <h2 class="text-xl font-bold text-slate-900 mt-2">
+              50,000 Free Users • Matchday Ad Monetization & Phase 2 Licence Self-Funding Tracker
+            </h2>
+            <p class="text-xs text-slate-600 mt-0.5">
+              Launch on the App Store with <strong>£0 upfront licensing cost</strong> and <strong>no £10/yr paywall</strong> to maximize viral group invites. Friends settle pots peer-to-peer with their Group Admin while matchday sponsor ads fund your Phase 2 UKGC Licence.
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              onclick="simulateMatchweekAdClick(1)"
+              class="px-3.5 py-2 rounded-xl bg-amber-500 text-slate-950 text-xs font-extrabold hover:bg-amber-400 transition shadow-sm"
+            >
+              +1 Matchweek Ads (+£1,350)
+            </button>
+            <button
+              onclick="simulateMatchweekAdClick(5)"
+              class="px-3.5 py-2 rounded-xl bg-emerald-600 text-white text-xs font-extrabold hover:bg-emerald-700 transition shadow-sm"
+            >
+              +5 Matchweeks Ads (+£6,750)
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+            <div class="text-xs font-bold text-amber-900 uppercase">Phase 1 Ad Revenue Earned</div>
+            <div id="p1-ad-rev-total" class="text-2xl font-extrabold text-slate-900 mt-1">£18,900.00</div>
+            <div id="p1-matchweeks-label" class="text-xs text-slate-600 mt-2">14 Matchweeks Simulated • 0% Pot Fee</div>
+          </div>
+
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div class="text-xs font-bold text-slate-500 uppercase">40-Week Season Ad Run-Rate</div>
+            <div class="text-2xl font-extrabold text-emerald-700 mt-1">£54,000.00 / yr</div>
+            <div class="text-xs text-slate-600 mt-2">50,000 MAU • £12.50 UK Sports eCPM</div>
+          </div>
+
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div class="text-xs font-bold text-slate-500 uppercase">Upfront UKGC Licence Needed</div>
+            <div class="text-2xl font-extrabold text-emerald-700 mt-1">£0.00 (Exempt)</div>
+            <div class="text-xs text-slate-600 mt-2">P2P Treasurer Kitty + 100% Free App</div>
+          </div>
+
+          <div class="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4">
+            <div class="flex items-center justify-between text-xs font-bold text-indigo-900 uppercase">
+              <span>Phase 2 UKGC Licence Fund</span>
+              <span id="p1-licence-pct">76%</span>
+            </div>
+            <div id="p1-licence-progress-text" class="text-lg font-extrabold text-indigo-700 mt-1">£18,900 / £25,000</div>
+            <div class="w-full h-2.5 bg-indigo-100 rounded-full overflow-hidden mt-2">
+              <div id="p1-licence-bar" class="h-full bg-indigo-600 rounded-full transition-all" style="width: 76%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-5">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              PLATFORM OWNER • TREASURY & FLOAT COMMAND CENTRE
+            </span>
+            <h2 class="text-xl font-bold text-slate-900 mt-2">
+              Real-Time Platform Float (AUM) & Passive Interest Simulator
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">
+              Every user deposit, locked round wager, unclaimed rollover pot, and 100% pot payout remains inside the closed-loop wallet float until external bank withdrawal.
+            </p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              onclick="simulateDaysYield(1)"
+              class="px-3 py-2 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 transition"
+            >
+              +1 Day Float Yield
+            </button>
+            <button
+              onclick="simulateDaysYield(30)"
+              class="px-3 py-2 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 transition"
+            >
+              +30 Days Float Yield
+            </button>
+            <button
+              onclick="simulateDaysYield(365)"
+              class="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-extrabold shadow-sm hover:bg-emerald-700 transition"
+            >
+              Simulate +1 Year Float Interest
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+            <div class="flex items-center justify-between text-xs font-semibold text-slate-500">
+              <span>TOTAL PLATFORM FLOAT (AUM)</span>
+              <span class="text-emerald-700 font-bold">50,000 USERS</span>
+            </div>
+            <div id="kpi-total-float" class="text-2xl font-extrabold text-slate-900 mt-2">£0.00</div>
+            <div class="mt-3 pt-2 border-t border-slate-200 space-y-1 text-xs">
+              <div class="flex justify-between">
+                <span class="text-slate-500">50,000 User Wallets (<span id="kpi-avg-wallet">£15.00</span> avg):</span>
+                <span id="kpi-user-wallets" class="font-bold text-slate-900">£0.00</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Active Locked Group Pots:</span>
+                <span id="kpi-escrow-pots" class="font-bold text-amber-600">£0.00</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Rollover Pot Reserves:</span>
+                <span id="kpi-rollover-pots" class="font-bold text-cyan-700">£0.00</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+            <div class="flex items-center justify-between text-xs font-semibold text-slate-500">
+              <span>REVENUE 1: £10/YR MEMBERSHIPS</span>
+              <span class="text-indigo-600 font-bold">GATE ACTIVE</span>
+            </div>
+            <div id="kpi-sub-revenue" class="text-2xl font-extrabold text-slate-900 mt-2">£0.00</div>
+            <div class="mt-3 pt-2 border-t border-slate-200 space-y-1 text-xs">
+              <div class="flex justify-between">
+                <span class="text-slate-500">Active £10/yr Members:</span>
+                <span id="kpi-active-subs" class="font-bold text-indigo-600">49,999 / 50,000</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Membership Price:</span>
+                <span class="font-bold text-slate-900">£10.00 / yr</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Pot Commission Deducted:</span>
+                <span class="font-bold text-emerald-700">£0.00 (0%)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+            <div class="flex items-center justify-between text-xs font-semibold text-slate-500">
+              <span>REVENUE 2: ACCRUED FLOAT YIELD</span>
+              <span id="kpi-apy-pill" class="text-emerald-700 font-bold">4.25% APY</span>
+            </div>
+            <div id="kpi-accrued-yield" class="text-2xl font-extrabold text-emerald-600 mt-2">£0.00</div>
+            <div class="mt-3 pt-2 border-t border-slate-200 space-y-1 text-xs">
+              <div class="flex justify-between">
+                <span class="text-slate-500">Simulated Days Elapsed:</span>
+                <span id="kpi-days-elapsed" class="font-bold text-slate-900">30 days</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Daily Float Interest:</span>
+                <span id="kpi-daily-yield" class="font-bold text-emerald-700">£0.00 / day</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Annualized Yield Run-Rate:</span>
+                <span id="kpi-annual-yield" class="font-bold text-emerald-700">£0.00 / yr</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+            <div class="flex items-center justify-between text-xs font-semibold text-slate-500">
+              <span>CONFIGURABLE BaaS APY</span>
+              <span class="text-emerald-700 font-bold">BoE BASE</span>
+            </div>
+            <div class="mt-2 flex items-baseline justify-between">
+              <span id="kpi-apy-label" class="text-2xl font-extrabold text-slate-900">4.25%</span>
+              <span class="text-xs text-slate-500">Modulr / Griffin Yield</span>
+            </div>
+            <div class="mt-3">
+              <input
+                id="apy-slider"
+                type="range"
+                min="100"
+                max="800"
+                step="25"
+                value="425"
+                oninput="updateApyBps(this.value)"
+                class="w-full accent-emerald-600"
+              />
+              <div class="flex justify-between text-xs text-slate-500 mt-1">
+                <span>1.00%</span>
+                <span>4.25%</span>
+                <span>8.00%</span>
+              </div>
+            </div>
+            <div id="kpi-audit-status" class="mt-2 pt-2 border-t border-slate-200 text-xs font-bold text-emerald-700">
+              ✓ Double-Entry Zero-Sum Verified
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm lg:col-span-5 space-y-4">
+          <h3 class="text-base font-bold text-slate-900">
+            Multi-User Open Banking Float Simulator
+          </h3>
+          <div id="treasury-user-list" class="space-y-2.5"></div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm lg:col-span-7 space-y-4">
+          <h3 class="text-base font-bold text-slate-900">
+            Closed-Loop Double-Entry Wallet Accounts (All 4 States + Clearing)
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="border-b border-slate-200 text-slate-500">
+                  <th class="pb-2 font-semibold">Wallet Label</th>
+                  <th class="pb-2 font-semibold">Account State</th>
+                  <th class="pb-2 font-semibold">BaaS Ref</th>
+                  <th class="pb-2 text-right font-semibold">Balance</th>
+                </tr>
+              </thead>
+              <tbody id="treasury-wallets-tbody" class="divide-y divide-slate-200"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-base font-bold text-slate-900">
+            Immutable Double-Entry Ledger Transactions (Append-Only Audit Log)
+          </h3>
+          <span id="ledger-count-badge" class="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold"></span>
+        </div>
+        <div class="max-h-72 overflow-y-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="sticky top-0 bg-white border-b border-slate-200 text-slate-500">
+              <tr>
+                <th class="pb-2 font-semibold">Tx Type</th>
+                <th class="pb-2 font-semibold">Description</th>
+                <th class="pb-2 font-semibold">Debit Account (-)</th>
+                <th class="pb-2 font-semibold">Credit Account (+)</th>
+                <th class="pb-2 text-right font-semibold">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="ledger-tx-tbody" class="divide-y divide-slate-200"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 2: GROUP POOL, ADMIN ROUND BUILDER (1-3 EXACT SCORE / 1-5 OUTRIGHT + WAGER) & LIVE MATCH CENTRE -->
+    <div id="view-pool" class="hidden space-y-6">
+      <!-- Active User Wallet & £10/Yr Membership Gate Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm lg:col-span-7 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div id="pool-user-wallet-title" class="text-xs font-bold uppercase tracking-wider text-slate-500">
+              IN-APP WALLET
+            </div>
+            <div class="flex items-baseline gap-3 mt-1">
+              <span id="pool-user-wallet-balance" class="text-3xl font-extrabold text-slate-900">£0.00</span>
+              <span class="px-2 py-0.5 rounded text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                100% Instant Pot Settlement
+              </span>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button
+              onclick="userDeposit(2000)"
+              class="px-3.5 py-2 rounded-xl bg-emerald-600 text-white text-xs font-extrabold hover:bg-emerald-700 transition shadow-sm"
+            >
+              + Top Up £20 (Open Banking)
+            </button>
+            <button
+              onclick="userWithdraw(2000)"
+              class="px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 transition"
+            >
+              Withdraw £20 to Bank
+            </button>
+          </div>
+        </div>
+
+        <div id="membership-gate-card" class="rounded-2xl border p-5 shadow-sm lg:col-span-5"></div>
+      </div>
+
+      <!-- GROUP ADMIN ROUND BUILDER: Format (Exact Score 1-3 Games vs Outright Result 1-5 Games) & Custom Wager -->
+      <div class="bg-white border border-indigo-200 rounded-2xl p-5 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+              ⚙️ GROUP ADMIN POOL FORMAT & WAGER CONFIGURATOR
+            </span>
+            <h3 class="text-base font-bold text-slate-900 mt-1.5">
+              Choose Format (Exact Score up to 3 Games OR Outright Result up to 5 Games) & Set Wager Amount
+            </h3>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 pt-2 border-t border-slate-200">
+          <!-- Format + Wager Column -->
+          <div class="lg:col-span-5 space-y-4">
+            <div>
+              <div class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                1. Select Pool Format
+              </div>
+              <div class="grid grid-cols-2 gap-2 mt-2" id="admin-format-buttons"></div>
+            </div>
+
+            <div>
+              <div class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                2. Set Round Wager / Buy-In Amount (£)
+              </div>
+              <div class="flex flex-wrap items-center gap-1.5 mt-2" id="admin-wager-presets"></div>
+              <div class="mt-2.5 flex flex-wrap items-center gap-2">
+                <div class="flex items-center gap-1 rounded-xl border border-slate-300 bg-slate-50 px-3 py-1.5">
+                  <span class="text-xs font-bold text-slate-500">Custom £</span>
+                  <input
+                    id="admin-wager-input"
+                    type="number"
+                    min="1"
+                    max="500"
+                    value="20"
+                    oninput="setAdminWagerPounds(this.value)"
+                    class="w-16 bg-transparent text-xs font-extrabold text-slate-900 focus:outline-none"
+                  />
+                </div>
+                <button
+                  onclick="updateCurrentRoundWagerOnly()"
+                  class="px-3 py-1.5 rounded-xl border border-amber-300 bg-amber-50 text-amber-800 text-xs font-bold hover:bg-amber-100 transition"
+                >
+                  Update Current Round Wager Only
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Multi-Game Fixture Selector Column -->
+          <div class="lg:col-span-7 flex flex-col justify-between space-y-3">
+            <div>
+              <div class="flex items-center justify-between">
+                <span id="admin-fixture-counter" class="text-xs font-bold uppercase tracking-wider text-slate-500"></span>
+                <span id="admin-fixture-rule-badge" class="text-xs font-bold text-emerald-700"></span>
+              </div>
+              <div id="admin-fixtures-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2"></div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-200">
+              <button
+                id="admin-apply-round-btn"
+                onclick="applyAdminRoundConfig()"
+                class="w-full py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-extrabold shadow-sm hover:bg-emerald-700 transition"
+              ></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Group Header, Escrow Pot & Rollover Reserve Summary -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 font-mono text-xs font-bold">
+                INVITE CODE: NLMS-100
+              </span>
+              <span class="px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
+                100% Pot Payout • 0% Commission
+              </span>
+              <span id="active-wager-pill" class="px-2.5 py-0.5 rounded-lg bg-cyan-50 text-cyan-800 border border-cyan-200 text-xs font-bold"></span>
+            </div>
+            <h2 class="text-xl font-bold text-slate-900 mt-2">
+              North London Matchday Syndicate
+            </h2>
+          </div>
+
+          <div class="flex flex-wrap gap-3">
+            <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5">
+              <div class="text-xs text-amber-800 font-semibold">Active Group Escrow Pot</div>
+              <div id="group-escrow-balance" class="text-xl font-extrabold text-amber-700">£0.00</div>
+            </div>
+            <div class="rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2.5">
+              <div class="text-xs text-cyan-800 font-semibold">Rollover Pot Reserve</div>
+              <div id="group-rollover-balance" class="text-xl font-extrabold text-cyan-700">£0.00</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="round-tabs" class="flex flex-wrap gap-2 pt-3 border-t border-slate-200"></div>
+      </div>
+
+      <!-- Main Match Centre + Leaderboard + Banter Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-7 space-y-6">
+          <div id="match-centre-card" class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-5"></div>
+
+          <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 id="leaderboard-title" class="text-base font-bold text-slate-900">
+                  Live Dynamic Leaderboard & Member Slips
+                </h3>
+                <p id="privacy-gate-subtitle" class="text-xs text-slate-500"></p>
+              </div>
+              <span id="privacy-gate-badge" class="px-2.5 py-1 rounded-lg text-xs font-bold"></span>
+            </div>
+            <div id="predictions-list" class="space-y-2.5"></div>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm lg:col-span-5 flex flex-col justify-between space-y-4">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+              <h3 class="text-base font-bold text-slate-900">
+                💬 Live Match Banter & Settlement Feed
+              </h3>
+              <span class="text-xs font-bold text-emerald-600">● Live Sync</span>
+            </div>
+            <div id="banter-feed-list" class="space-y-2.5 max-h-96 overflow-y-auto pr-1"></div>
+          </div>
+
+          <form onsubmit="submitBanter(event)" class="flex gap-2 pt-3 border-t border-slate-200">
+            <input
+              id="banter-input"
+              type="text"
+              placeholder="Drop banter into the live match feed..."
+              class="flex-1 rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400"
+            />
+            <button
+              type="submit"
+              class="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-extrabold hover:bg-emerald-700 transition"
+            >
+              Send
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ALL_FIXTURES = [
+      { id: "FX-ARS-LIV", comp: "Premier League • MW9", home: "Arsenal", away: "Liverpool", hb: "ARS", ab: "LIV" },
+      { id: "FX-MCI-CHE", comp: "Premier League • MW10", home: "Man City", away: "Chelsea", hb: "MCI", ab: "CHE" },
+      { id: "FX-NEW-TOT", comp: "Premier League • MW10", home: "Newcastle", away: "Tottenham", hb: "NEW", ab: "TOT" },
+      { id: "FX-MUN-AVL", comp: "Premier League • MW10", home: "Man United", away: "Aston Villa", hb: "MUN", ab: "AVL" },
+      { id: "FX-BHA-WHU", comp: "Premier League • MW10", home: "Brighton", away: "West Ham", hb: "BHA", ab: "WHU" },
+      { id: "FX-RMA-BAY", comp: "UEFA Champions League", home: "Real Madrid", away: "Bayern Munich", hb: "RMA", ab: "BAY" }
+    ];
+
+    const state = {
+      launchPhase: "PHASE_1_FREE_ADS", // "PHASE_1_FREE_ADS" | "PHASE_2_FLOAT_TREASURY"
+      adRevenuePence: 1890000, // £18,900.00 earned across 14 matchweeks (50,000 free users @ £1,350/mw)
+      adMatchweeksSimulated: 14,
+      phase2LicenceTargetPence: 2500000, // £25,000.00 target to self-fund Phase 2 UKGC Licence + BaaS
+      currentView: "MOBILE_DEMO", // "MOBILE_DEMO" | "POOL" | "TREASURY"
+      mobileTab: "SLATE", // "SLATE" | "KITTY" | "BANTER" | "LEGAL"
+      p2pPaidUserIds: ["usr_admin_marcus", "usr_sarah", "usr_liam"],
+      activeUserId: "usr_admin_marcus",
+      selectedRoundId: "rnd_2",
+      totalPlatformUsers: 50000,
+      cohortActiveMemberships: 49995,
+      annualApyBps: 425,
+      simulatedDaysElapsed: 30,
+      accruedInterestPence: 262035, // 30 days @ 4.25% APY on £750,140.00 float = £2,620.35
+      adminFormat: "EXACT_SCORE",
+      adminWagerPounds: 20,
+      adminSelectedFixtureIds: ["FX-ARS-LIV", "FX-MCI-CHE"],
+      draftPicks: {},
+      users: [
+        { id: "usr_admin_marcus", name: "Marcus Vance (Group Admin)", initials: "MV", role: "ADMIN" },
+        { id: "usr_sarah", name: "Sarah Jenkins", initials: "SJ", role: "MEMBER" },
+        { id: "usr_liam", name: "Liam O'Connor", initials: "LO", role: "MEMBER" },
+        { id: "usr_chloe", name: "Chloe Patel", initials: "CP", role: "MEMBER" },
+        { id: "usr_dev", name: "Dev Sharma (Unsubscribed)", initials: "DS", role: "MEMBER" }
+      ],
+      wallets: [
+        { id: "wal_clearing", ownerId: "sys", type: "EXTERNAL_BAAS_CLEARING", label: "TrueLayer / Modulr External Clearing", ref: "MODULR-CLR-001", balancePence: -125013000 },
+        { id: "wal_sub_rev", ownerId: "sys", type: "PLATFORM_SUBSCRIPTION_REVENUE", label: "Platform £10/yr Membership Revenue (49,999 Active)", ref: "MODULR-REV-002", balancePence: 49999000 },
+        { id: "wal_usr_cohort", ownerId: "usr_cohort_49995", type: "USER_AVAILABLE", label: "POOLIT Member Cohort (49,995 Users @ £15.00 avg)", ref: "MODULR-COHORT-50K", balancePence: 74991500 },
+        { id: "wal_usr_admin_marcus", ownerId: "usr_admin_marcus", type: "USER_AVAILABLE", label: "Marcus Vance • In-App Wallet", ref: "MODULR-USR-101", balancePence: 2500 },
+        { id: "wal_usr_sarah", ownerId: "usr_sarah", type: "USER_AVAILABLE", label: "Sarah Jenkins • In-App Wallet", ref: "MODULR-USR-102", balancePence: 1500 },
+        { id: "wal_usr_liam", ownerId: "usr_liam", type: "USER_AVAILABLE", label: "Liam O'Connor • In-App Wallet", ref: "MODULR-USR-103", balancePence: 1500 },
+        { id: "wal_usr_chloe", ownerId: "usr_chloe", type: "USER_AVAILABLE", label: "Chloe Patel • In-App Wallet", ref: "MODULR-USR-104", balancePence: 1500 },
+        { id: "wal_usr_dev", ownerId: "usr_dev", type: "USER_AVAILABLE", label: "Dev Sharma • In-App Wallet", ref: "MODULR-USR-105", balancePence: 1500 },
+        { id: "wal_grp_esc", ownerId: "grp_1", type: "GROUP_ESCROW_POT", label: "North London Syndicate • Active Escrow Pot", ref: "MODULR-ESC-201", balancePence: 14000 },
+        { id: "wal_grp_rol", ownerId: "grp_1", type: "GROUP_ROLLOVER_RESERVE", label: "North London Syndicate • Rollover Reserve", ref: "MODULR-ROL-202", balancePence: 0 }
+      ],
+      subscriptions: [
+        { userId: "usr_admin_marcus", status: "ACTIVE" },
+        { userId: "usr_sarah", status: "ACTIVE" },
+        { userId: "usr_liam", status: "ACTIVE" },
+        { userId: "usr_chloe", status: "ACTIVE" }
+      ],
+      rounds: [
+        {
+          id: "rnd_2",
+          number: 2,
+          criteria: "EXACT_SCORE",
+          fixtures: [
+            { id: "FX-ARS-LIV", comp: "Premier League • MW9", home: "Arsenal", away: "Liverpool", hb: "ARS", ab: "LIV", homeScore: 0, awayScore: 0 },
+            { id: "FX-MCI-CHE", comp: "Premier League • MW10", home: "Man City", away: "Chelsea", hb: "MCI", ab: "CHE", homeScore: 0, awayScore: 0 }
+          ],
+          buyInPence: 2000,
+          status: "OPEN_FOR_ENTRIES",
+          minute: 0,
+          period: "PRE_MATCH",
+          rolloverInjectedPence: 8000,
+          memberEntriesPence: 6000,
+          totalPotPence: 14000
+        },
+        {
+          id: "rnd_1",
+          number: 1,
+          criteria: "OUTRIGHT_RESULT",
+          fixtures: [
+            { id: "FX-MCI-TOT", comp: "Premier League • MW8", home: "Man City", away: "Tottenham", hb: "MCI", ab: "TOT", homeScore: 3, awayScore: 3 }
+          ],
+          buyInPence: 2000,
+          status: "SETTLED_ROLLOVER",
+          minute: 90,
+          period: "FULL_TIME",
+          rolloverInjectedPence: 0,
+          memberEntriesPence: 8000,
+          totalPotPence: 8000
+        }
+      ],
+      predictions: [
+        {
+          id: "p_m_r2",
+          roundId: "rnd_2",
+          userId: "usr_admin_marcus",
+          picks: [
+            { fixtureId: "FX-ARS-LIV", home: 2, away: 1, outright: "HOME" },
+            { fixtureId: "FX-MCI-CHE", home: 2, away: 0, outright: "HOME" }
+          ],
+          outcome: "PENDING",
+          payoutPence: 0
+        },
+        {
+          id: "p_s_r2",
+          roundId: "rnd_2",
+          userId: "usr_sarah",
+          picks: [
+            { fixtureId: "FX-ARS-LIV", home: 2, away: 2, outright: "DRAW" },
+            { fixtureId: "FX-MCI-CHE", home: 1, away: 1, outright: "DRAW" }
+          ],
+          outcome: "PENDING",
+          payoutPence: 0
+        },
+        {
+          id: "p_l_r2",
+          roundId: "rnd_2",
+          userId: "usr_liam",
+          picks: [
+            { fixtureId: "FX-ARS-LIV", home: 1, away: 2, outright: "AWAY" },
+            { fixtureId: "FX-MCI-CHE", home: 1, away: 2, outright: "AWAY" }
+          ],
+          outcome: "PENDING",
+          payoutPence: 0
+        }
+      ],
+      ledger: [
+        { txType: "POOL_ENTRY_BUY_IN", desc: "Round #2 Wager (2-Game Exact Score) • Liam O'Connor", debit: "Liam O'Connor • In-App Wallet", credit: "North London Syndicate • Active Escrow Pot", amountPence: 2000 },
+        { txType: "POOL_ENTRY_BUY_IN", desc: "Round #2 Wager (2-Game Exact Score) • Sarah Jenkins", debit: "Sarah Jenkins • In-App Wallet", credit: "North London Syndicate • Active Escrow Pot", amountPence: 2000 },
+        { txType: "POOL_ENTRY_BUY_IN", desc: "Round #2 Wager (2-Game Exact Score) • Marcus Vance", debit: "Marcus Vance • In-App Wallet", credit: "North London Syndicate • Active Escrow Pot", amountPence: 2000 },
+        { txType: "POOL_ROLLOVER_INJECT", desc: "£80.00 Rollover Reserve Injected into Round #2", debit: "North London Syndicate • Rollover Reserve", credit: "North London Syndicate • Active Escrow Pot", amountPence: 8000 },
+        { txType: "POOL_ROLLOVER_LOCK", desc: "Round #1 (0 Winners) -> Locked in Rollover Reserve", debit: "North London Syndicate • Active Escrow Pot", credit: "North London Syndicate • Rollover Reserve", amountPence: 8000 }
+      ],
+      banter: [
+        { author: "Liam O'Connor", initials: "LO", text: "Marcus set this week to a 2-Game Exact Score slate (Arsenal v Liverpool + Man City v Chelsea) at £20 wager — pot is £140!", time: "16:50" },
+        { author: "Sarah Jenkins", initials: "SJ", text: "Use the Group Admin Configurator above to test switching to 3 Exact Score games, 5 Outright Result (1X2) games, or changing the £ wager!", time: "16:48" }
+      ]
+    };
+
+    function formatGBP(pence) {
+      const sign = pence < 0 ? "-" : "";
+      const abs = Math.abs(pence);
+      return sign + "£" + (abs / 100).toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function deriveOutright(h, a) {
+      if (h > a) return "HOME";
+      if (a > h) return "AWAY";
+      return "DRAW";
+    }
+
+    function showAlert(msg, isError = false) {
+      const banner = document.getElementById("alert-banner");
+      const text = document.getElementById("alert-text");
+      banner.className = `rounded-xl border px-4 py-3 text-xs font-semibold flex items-center justify-between ${
+        isError
+          ? "border-rose-300 bg-rose-50 text-rose-800"
+          : "border-emerald-300 bg-emerald-50 text-emerald-800"
+      }`;
+      text.textContent = msg;
+      banner.classList.remove("hidden");
+    }
+
+    function hideAlert() {
+      document.getElementById("alert-banner").classList.add("hidden");
+    }
+
+    function getWallet(id) {
+      return state.wallets.find((w) => w.id === id);
+    }
+
+    function getUserWallet(userId) {
+      return state.wallets.find((w) => w.ownerId === userId && w.type === "USER_AVAILABLE");
+    }
+
+    function hasActiveSub(userId) {
+      return state.subscriptions.some((s) => s.userId === userId && s.status === "ACTIVE");
+    }
+
+    function executeDoubleEntry(txType, debitId, creditId, amountPence, desc) {
+      const debit = getWallet(debitId);
+      const credit = getWallet(creditId);
+      if (!debit || !credit) throw new Error("Wallet not found");
+      if (debit.type !== "EXTERNAL_BAAS_CLEARING" && debit.balancePence < amountPence) {
+        throw new Error(`Insufficient funds in ${debit.label}: available ${formatGBP(debit.balancePence)}, required ${formatGBP(amountPence)}.`);
+      }
+      debit.balancePence -= amountPence;
+      credit.balancePence += amountPence;
+      state.ledger.unshift({
+        txType,
+        desc,
+        debit: debit.label,
+        credit: credit.label,
+        amountPence
+      });
+    }
+
+    function switchView(view) {
+      state.currentView = view;
+      document.getElementById("view-mobile-demo").classList.toggle("hidden", view !== "MOBILE_DEMO");
+      document.getElementById("view-treasury").classList.toggle("hidden", view !== "TREASURY");
+      document.getElementById("view-pool").classList.toggle("hidden", view !== "POOL");
+      renderAll();
+    }
+
+    function setMobileTab(tab) {
+      state.mobileTab = tab;
+      if (state.currentView !== "MOBILE_DEMO") {
+        switchView("MOBILE_DEMO");
+      } else {
+        renderAll();
+      }
+    }
+
+    function toggleP2pPaid(userId) {
+      const idx = state.p2pPaidUserIds.indexOf(userId);
+      const u = state.users.find((x) => x.id === userId);
+      if (idx >= 0) {
+        state.p2pPaidUserIds.splice(idx, 1);
+        showAlert(`Marked ${u.name} as Pending in the P2P Group Treasurer Checklist.`);
+      } else {
+        state.p2pPaidUserIds.push(userId);
+        showAlert(`✓ Marked ${u.name} as Settled P2P with the Group Treasurer (outside the app)!`);
+      }
+      renderAll();
+    }
+
+    function shareWhatsAppInvite() {
+      const round = state.rounds.find((r) => r.id === state.selectedRoundId) || state.rounds[0];
+      const msg = `⚽ Join our POOLIT group "North London Matchday Syndicate" (Invite Code: NLMS-100)! This week's round is a ${round.fixtures.length}-Game ${round.criteria === "EXACT_SCORE" ? "Exact Score" : "Outright 1X2"} slate. 100% Free to join & lock your picks before kickoff!`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(msg).catch(() => {});
+      }
+      showAlert(`📲 Copied WhatsApp Group Invite to clipboard: "${msg}"`);
+    }
+
+    function triggerMobileKickoffWithAd() {
+      const round = state.rounds.find((r) => r.id === state.selectedRoundId) || state.rounds[0];
+      round.status = "LOCKED_LIVE";
+      round.minute = 12;
+      round.period = "FIRST_HALF";
+      document.getElementById("mobile-interstitial-ad").classList.remove("hidden");
+      renderAll();
+    }
+
+    function closeMobileInterstitialAd() {
+      document.getElementById("mobile-interstitial-ad").classList.add("hidden");
+      showAlert("👁️ Kickoff Lock Active! All friend prediction slips are now revealed in the mobile app.");
+      renderAll();
+    }
+
+    function simulateDeleteAccountCompliance() {
+      showAlert("✓ Apple Guideline 5.1.1(v) Verified: In-app account & personal data deletion confirmation triggered.");
+    }
+
+    function setLaunchPhase(phase) {
+      state.launchPhase = phase;
+      if (phase === "PHASE_1_FREE_ADS") {
+        showAlert("🚀 Switched to Phase 1: 100% Free-to-Use + Matchday Ads + P2P Group Treasurer Mode (£0 UKGC Licence Required & No Subscription Paywall)!");
+      } else {
+        showAlert("🏦 Switched to Phase 2: Regulated Closed-Loop BaaS Wallet + £10/yr Membership Gate + 4.25% APY Treasury Float Engine!");
+      }
+      renderAll();
+    }
+
+    function simulateMatchweekAdClick(weeks = 1) {
+      const addedPence = 135000 * weeks; // £1,350 per matchweek across 50,000 free users
+      state.adRevenuePence += addedPence;
+      state.adMatchweeksSimulated += weeks;
+      const pct = Math.min(100, Math.round((state.adRevenuePence / state.phase2LicenceTargetPence) * 100));
+      showAlert(
+        `💰 Simulated +${weeks} Matchweek${weeks > 1 ? "s" : ""} of Sponsor Ads across 50,000 free users: +${formatGBP(addedPence)} Ad Revenue! Phase 2 UKGC Licence Fund is now at ${formatGBP(state.adRevenuePence)} (${pct}% funded).`
+      );
+      renderAll();
+    }
+
+    function changeActiveUser(userId) {
+      state.activeUserId = userId;
+      hideAlert();
+      renderAll();
+    }
+
+    function setAdminFormat(format) {
+      state.adminFormat = format;
+      const maxAllowed = format === "EXACT_SCORE" ? 3 : 5;
+      if (state.adminSelectedFixtureIds.length > maxAllowed) {
+        state.adminSelectedFixtureIds = state.adminSelectedFixtureIds.slice(0, maxAllowed);
+      } else if (format === "OUTRIGHT_RESULT" && state.adminSelectedFixtureIds.length < 4) {
+        state.adminSelectedFixtureIds = ALL_FIXTURES.slice(0, 5).map((f) => f.id);
+      }
+      renderAll();
+    }
+
+    function setAdminWagerPounds(pounds) {
+      const val = Math.max(1, Number(pounds) || 1);
+      state.adminWagerPounds = val;
+      const input = document.getElementById("admin-wager-input");
+      if (input && Number(input.value) !== val) input.value = val;
+      renderAll();
+    }
+
+    function toggleAdminFixture(fxId) {
+      const maxAllowed = state.adminFormat === "EXACT_SCORE" ? 3 : 5;
+      const idx = state.adminSelectedFixtureIds.indexOf(fxId);
+      if (idx >= 0) {
+        if (state.adminSelectedFixtureIds.length <= 1) {
+          showAlert("At least 1 game must be selected for the pool round.", true);
+          return;
+        }
+        state.adminSelectedFixtureIds.splice(idx, 1);
+      } else {
+        if (state.adminSelectedFixtureIds.length >= maxAllowed) {
+          showAlert(
+            state.adminFormat === "EXACT_SCORE"
+              ? "Exact Score format allows up to 3 games max. Switch to Outright Result (1X2) to select up to 5 games!"
+              : "Outright Result format allows up to 5 games max.",
+            true
+          );
+          return;
+        }
+        state.adminSelectedFixtureIds.push(fxId);
+      }
+      renderAll();
+    }
+
+    function updateCurrentRoundWagerOnly() {
+      const round = state.rounds.find((r) => r.id === state.selectedRoundId) || state.rounds[0];
+      if (round.status !== "OPEN_FOR_ENTRIES") {
+        showAlert("Wager can only be modified on an open round before Kickoff Lock.", true);
+        return;
+      }
+      round.buyInPence = Math.round(state.adminWagerPounds * 100);
+      state.banter.unshift({
+        author: "Group Admin",
+        initials: "⚙️",
+        text: `Updated Round #${round.number} Wager to ${formatGBP(round.buyInPence)} per entry!`,
+        time: "Just now"
+      });
+      showAlert(`Updated Round #${round.number} Wager to ${formatGBP(round.buyInPence)}!`);
+      renderAll();
+    }
+
+    function applyAdminRoundConfig() {
+      try {
+        const chosenFixtures = ALL_FIXTURES.filter((f) => state.adminSelectedFixtureIds.includes(f.id));
+        const newBuyInPence = Math.round(state.adminWagerPounds * 100);
+        const currentRound = state.rounds[0];
+
+        if (currentRound && (currentRound.status === "OPEN_FOR_ENTRIES" || currentRound.status === "LOCKED_LIVE")) {
+          const existingPreds = state.predictions.filter((p) => p.roundId === currentRound.id);
+          existingPreds.forEach((p) => {
+            const uw = getUserWallet(p.userId);
+            const u = state.users.find((x) => x.id === p.userId);
+            executeDoubleEntry("POOL_REFUND", "wal_grp_esc", uw.id, currentRound.buyInPence, `Reconfigured Round #${currentRound.number} -> Refunded entry to ${u.name}`);
+          });
+          state.predictions = state.predictions.filter((p) => p.roundId !== currentRound.id);
+
+          const esc = getWallet("wal_grp_esc");
+          if (esc.balancePence > 0) {
+            executeDoubleEntry("POOL_ROLLOVER_LOCK", "wal_grp_esc", "wal_grp_rol", esc.balancePence, "Preserved Rollover Reserve during Admin Round Reconfiguration");
+          }
+          state.rounds.shift();
+        }
+
+        const nextNum = state.rounds.length + 1;
+        const newRoundId = "rnd_" + Date.now();
+        const rol = getWallet("wal_grp_rol");
+        let rolloverInjected = 0;
+        if (rol.balancePence > 0) {
+          rolloverInjected = rol.balancePence;
+          executeDoubleEntry("POOL_ROLLOVER_INJECT", "wal_grp_rol", "wal_grp_esc", rolloverInjected, `Inject ${formatGBP(rolloverInjected)} Rollover Reserve into Round #${nextNum}`);
+        }
+
+        const roundFixtures = chosenFixtures.map((f) => ({
+          id: f.id,
+          comp: f.comp,
+          home: f.home,
+          away: f.away,
+          hb: f.hb,
+          ab: f.ab,
+          homeScore: 0,
+          awayScore: 0
+        }));
+
+        const newRound = {
+          id: newRoundId,
+          number: nextNum,
+          criteria: state.adminFormat,
+          fixtures: roundFixtures,
+          buyInPence: newBuyInPence,
+          status: "OPEN_FOR_ENTRIES",
+          minute: 0,
+          period: "PRE_MATCH",
+          rolloverInjectedPence: rolloverInjected,
+          memberEntriesPence: 0,
+          totalPotPence: rolloverInjected
+        };
+
+        state.rounds.unshift(newRound);
+        state.selectedRoundId = newRoundId;
+
+        const autoSeedUsers = [
+          {
+            uid: "usr_admin_marcus",
+            picks: roundFixtures.map((fx, i) => ({
+              fixtureId: fx.id,
+              home: i % 2 === 0 ? 2 : 1,
+              away: i % 2 === 0 ? 1 : 0,
+              outright: "HOME"
+            }))
+          },
+          {
+            uid: "usr_sarah",
+            picks: roundFixtures.map((fx, i) => ({
+              fixtureId: fx.id,
+              home: 1,
+              away: 1,
+              outright: i % 2 === 0 ? "DRAW" : "AWAY"
+            }))
+          }
+        ];
+
+        autoSeedUsers.forEach((su) => {
+          const uw = getUserWallet(su.uid);
+          const u = state.users.find((x) => x.id === su.uid);
+          if (uw.balancePence >= newBuyInPence) {
+            executeDoubleEntry("POOL_ENTRY_BUY_IN", uw.id, "wal_grp_esc", newBuyInPence, `Round #${nextNum} Wager (${roundFixtures.length}-Game ${state.adminFormat === "EXACT_SCORE" ? "Exact Score" : "Outright 1X2"}) • ${u.name}`);
+            newRound.memberEntriesPence += newBuyInPence;
+            newRound.totalPotPence = newRound.rolloverInjectedPence + newRound.memberEntriesPence;
+            state.predictions.push({
+              id: "prd_" + Date.now() + "_" + su.uid,
+              roundId: newRoundId,
+              userId: su.uid,
+              picks: su.picks,
+              outcome: "PENDING",
+              payoutPence: 0
+            });
+          }
+        });
+
+        state.banter.unshift({
+          author: "Group Admin",
+          initials: "⚡",
+          text: `Configured Round #${nextNum}: ${roundFixtures.length}-Game ${state.adminFormat === "EXACT_SCORE" ? "Exact Score" : "Outright Result (1X2)"} Slate at ${formatGBP(newBuyInPence)} wager! Total Pot: ${formatGBP(newRound.totalPotPence)}.`,
+          time: "Just now"
+        });
+
+        showAlert(`Launched ${roundFixtures.length}-Game ${state.adminFormat === "EXACT_SCORE" ? "Exact Score" : "Outright Result (1X2)"} Round at ${formatGBP(newBuyInPence)} wager!`);
+        renderAll();
+      } catch (e) {
+        showAlert(e.message, true);
+      }
+    }
+
+    function getDraftPick(fxId) {
+      if (!state.draftPicks[fxId]) {
+        state.draftPicks[fxId] = { fixtureId: fxId, home: 2, away: 1, outright: "HOME" };
+      }
+      return state.draftPicks[fxId];
+    }
+
+    function updateDraftScore(fxId, side, val) {
+      const p = getDraftPick(fxId);
+      p[side] = Math.max(0, Number(val) || 0);
+      p.outright = deriveOutright(p.home, p.away);
+    }
+
+    function updateDraftOutright(fxId, outright) {
+      const p = getDraftPick(fxId);
+      p.outright = outright;
+      renderAll();
+    }
+
+    function submitPredictionSlip() {
+      try {
+        const user = state.users.find((u) => u.id === state.activeUserId);
+        if (state.launchPhase === "PHASE_2_FLOAT_TREASURY" && !hasActiveSub(user.id)) {
+          throw new Error(`MEMBERSHIP GATE BLOCKED: ${user.name} must hold an active £10/year Membership before entering a pool round (or switch to Phase 1: Free + Ads mode!).`);
+        }
+        const round = state.rounds.find((r) => r.id === state.selectedRoundId);
+        if (round.status !== "OPEN_FOR_ENTRIES") {
+          throw new Error("KICKOFF LOCK: Round is already locked.");
+        }
+
+        const uw = getUserWallet(user.id);
+        executeDoubleEntry("POOL_ENTRY_BUY_IN", uw.id, "wal_grp_esc", round.buyInPence, `Round #${round.number} Wager (${round.fixtures.length}-Game ${round.criteria}) • ${user.name}`);
+
+        round.memberEntriesPence += round.buyInPence;
+        round.totalPotPence = round.rolloverInjectedPence + round.memberEntriesPence;
+
+        const picks = round.fixtures.map((fx) => {
+          const dp = getDraftPick(fx.id);
+          return { fixtureId: fx.id, home: dp.home, away: dp.away, outright: dp.outright };
+        });
+
+        state.predictions.push({
+          id: "prd_" + Date.now(),
+          roundId: round.id,
+          userId: user.id,
+          picks,
+          outcome: "PENDING",
+          payoutPence: 0
+        });
+
+        if (state.launchPhase === "PHASE_1_FREE_ADS") {
+          showAlert(`🎉 Phase 1 Free Entry Locked for ${user.name} (No £10/yr sub required)! ${formatGBP(round.buyInPence)} P2P Group Kitty entry tracked.`);
+        } else {
+          showAlert(`Locked ${round.fixtures.length}-Game ${round.criteria === "EXACT_SCORE" ? "Exact Score" : "Outright Result"} slip for ${user.name}! Wager (${formatGBP(round.buyInPence)}) added to Group Escrow Pot.`);
+        }
+        renderAll();
+      } catch (e) {
+        showAlert(e.message, true);
+      }
+    }
+
+    function evaluateSlip(round, pred) {
+      let correct = 0;
+      round.fixtures.forEach((fx, i) => {
+        const pick = pred.picks.find((p) => p.fixtureId === fx.id) || pred.picks[i];
+        if (!pick) return;
+        if (round.criteria === "OUTRIGHT_RESULT") {
+          if (deriveOutright(fx.homeScore, fx.awayScore) === pick.outright) correct++;
+        } else {
+          if (fx.homeScore === pick.home && fx.awayScore === pick.away) correct++;
+        }
+      });
+      return {
+        correct,
+        total: round.fixtures.length,
+        isFullSweep: correct === round.fixtures.length && round.fixtures.length > 0
+      };
+    }
+
+    function bumpFixtureScore(roundId, fxIdx, side) {
+      const round = state.rounds.find((r) => r.id === roundId);
+      if (round.status === "OPEN_FOR_ENTRIES") round.status = "LOCKED_LIVE";
+      round.minute = Math.min(90, (round.minute || 15) + 12);
+      round.period = "SECOND_HALF";
+      const fx = round.fixtures[fxIdx];
+      if (side === "home") fx.homeScore += 1;
+      else fx.awayScore += 1;
+      renderAll();
+    }
+
+    function simulateUserWinsAllLegs(roundId, userId) {
+      const round = state.rounds.find((r) => r.id === roundId);
+      const pred = state.predictions.find((p) => p.roundId === roundId && p.userId === userId);
+      if (!round || !pred) return;
+      round.status = "LOCKED_LIVE";
+      round.minute = 86;
+      round.period = "SECOND_HALF";
+
+      round.fixtures.forEach((fx, i) => {
+        const pick = pred.picks.find((p) => p.fixtureId === fx.id) || pred.picks[i];
+        if (round.criteria === "OUTRIGHT_RESULT") {
+          if (pick.outright === "HOME") { fx.homeScore = 2; fx.awayScore = 0; }
+          else if (pick.outright === "AWAY") { fx.homeScore = 0; fx.awayScore = 2; }
+          else { fx.homeScore = 1; fx.awayScore = 1; }
+        } else {
+          fx.homeScore = pick.home;
+          fx.awayScore = pick.away;
+        }
+      });
+
+      const u = state.users.find((x) => x.id === userId);
+      state.banter.unshift({
+        author: "Live Match Feed",
+        initials: "🔥",
+        text: `LIVE 86': ${u.name} is currently hitting all ${round.fixtures.length}/${round.fixtures.length} games and on track to win 100% of the ${formatGBP(round.totalPotPence)} pot!`,
+        time: "86'"
+      });
+      renderAll();
+    }
+
+    function simulateZeroWinnersRollover(roundId) {
+      const round = state.rounds.find((r) => r.id === roundId);
+      if (!round) return;
+      round.status = "LOCKED_LIVE";
+      round.minute = 89;
+      round.period = "SECOND_HALF";
+      round.fixtures.forEach((fx) => {
+        fx.homeScore = 4;
+        fx.awayScore = 4;
+      });
+      state.banter.unshift({
+        author: "Live Match Feed",
+        initials: "⚠️",
+        text: `LIVE 89': Shock results across the slate! 0 members have all ${round.fixtures.length} games right — ${formatGBP(round.totalPotPence)} pot heading for a Rollover!`,
+        time: "89'"
+      });
+      renderAll();
+    }
+
+    function lockRoundKickoff(roundId) {
+      const round = state.rounds.find((r) => r.id === roundId);
+      round.status = "LOCKED_LIVE";
+      round.minute = 1;
+      round.period = "FIRST_HALF";
+      showAlert("Pot locked prior to kickoff! All member prediction slips are now revealed.");
+      renderAll();
+    }
+
+    function settleRound(roundId) {
+      try {
+        const round = state.rounds.find((r) => r.id === roundId);
+        const escrow = getWallet("wal_grp_esc");
+        const potPence = escrow.balancePence;
+        if (potPence <= 0) throw new Error("Escrow pot is already settled.");
+
+        round.minute = 90;
+        round.period = "FULL_TIME";
+
+        const preds = state.predictions.filter((p) => p.roundId === round.id);
+        const winners = preds.filter((p) => evaluateSlip(round, p).isFullSweep);
+
+        if (winners.length > 0) {
+          const share = Math.floor(potPence / winners.length);
+          const rem = potPence - share * winners.length;
+          const winnerNames = [];
+
+          winners.forEach((w) => {
+            const u = state.users.find((x) => x.id === w.userId);
+            const uw = getUserWallet(w.userId);
+            executeDoubleEntry("POOL_WINNINGS_PAYOUT", "wal_grp_esc", uw.id, share, `100% Pot Payout (0% Commission) • Round #${round.number} -> ${u.name}`);
+            w.outcome = "WON";
+            w.payoutPence = share;
+            winnerNames.push(u.name);
+          });
+
+          if (rem > 0) {
+            executeDoubleEntry("POOL_ROLLOVER_LOCK", "wal_grp_esc", "wal_grp_rol", rem, "Tie remainder carried to Rollover Reserve");
+          }
+
+          round.status = "SETTLED_WINNER";
+          showAlert(`100% Pot Payout (${formatGBP(potPence)}) credited directly into ${winnerNames.join(" & ")}'s In-App Wallet! Total Platform Float stayed 100% intact!`);
+        } else {
+          executeDoubleEntry("POOL_ROLLOVER_LOCK", "wal_grp_esc", "wal_grp_rol", potPence, `Round #${round.number} (0 Full-Slate Winners) -> 100% Pot Locked in Rollover Reserve`);
+          round.status = "SETTLED_ROLLOVER";
+          showAlert(`Nobody hit all ${round.fixtures.length} games! 100% of the ${formatGBP(potPence)} pot locked in Group Rollover Reserve for the next round!`);
+        }
+        renderAll();
+      } catch (e) {
+        showAlert(e.message, true);
+      }
+    }
+
+    function quickDeposit(userId, amountPence) {
+      try {
+        const user = state.users.find((u) => u.id === userId);
+        const uw = getUserWallet(userId);
+        executeDoubleEntry("DEPOSIT_OPEN_BANKING", "wal_clearing", uw.id, amountPence, `Instant Open Banking Top-Up (${user.name})`);
+        showAlert(`Deposited ${formatGBP(amountPence)} into ${user.name}'s wallet. Platform Float increased!`);
+        renderAll();
+      } catch (e) {
+        showAlert(e.message, true);
+      }
+    }
+
+    function simulateCohortDeposit(avgPencePerUser) {
+      try {
+        const totalCohortPence = state.totalPlatformUsers * avgPencePerUser;
+        executeDoubleEntry(
+          "DEPOSIT_OPEN_BANKING",
+          "wal_clearing",
+          "wal_usr_cohort",
+          totalCohortPence,
+          `50,000-User Cohort Open Banking Top-Up (+${formatGBP(avgPencePerUser)}/user avg)`
+        );
+        showAlert(
+          `Simulated +${formatGBP(avgPencePerUser)} deposit across all 50,000 users: +${formatGBP(totalCohortPence)} added to Platform Float!`
+        );
+        renderAll();
+      } catch (e) {
+        showAlert(e.message, true);
+      }
+    }
+
+    function userDeposit(amountPence) {
+      quickDeposit(state.activeUserId, amountPence);
+    }
+
+    function userWithdraw(amountPence) {
+      try {
+        const user = state.users.find((u) => u.id === state.activeUserId);
+        const uw = getUserWallet(state.activeUserId);
+        executeDoubleEntry("WITHDRAWAL_BANK", uw.id, "wal_clearing", amountPence, `External Bank Withdrawal (${user.name})`);
+        showAlert(`Withdrew ${formatGBP(amountPence)} to external bank account.`);
+        renderAll();
+      } catch (e) {
+        showAlert(e.message, true);
+      }
+    }
+
+    function buyMembership(method) {
+      try {
+        const user = state.users.find((u) => u.id === state.activeUserId);
+        const uw = getUserWallet(state.activeUserId);
+        if (method === "WALLET") {
+          executeDoubleEntry("MEMBERSHIP_FEE_WALLET", uw.id, "wal_sub_rev", 1000, `£10/yr Annual Membership paid from Wallet (${user.name})`);
+        } else {
+          executeDoubleEntry("MEMBERSHIP_FEE_DIRECT", "wal_clearing", "wal_sub_rev", 1000, `£10/yr Annual Membership via Open Banking (${user.name})`);
+        }
+        state.subscriptions.push({ userId: user.id, status: "ACTIVE" });
+        user.name = user.name.replace(" (Unsubscribed)", "");
+        showAlert(`£10/year Annual Membership activated for ${user.name}!`);
+        renderAll();
+      } catch (e) {
+        showAlert(e.message, true);
+      }
+    }
+
+    function updateApyBps(val) {
+      state.annualApyBps = Number(val);
+      renderAll();
+    }
+
+    function simulateDaysYield(days) {
+      const floatPence = computeMetrics().totalFloatPence;
+      const apy = state.annualApyBps / 10000;
+      const earned = Math.round(floatPence * (apy / 365) * days);
+      state.simulatedDaysElapsed += days;
+      state.accruedInterestPence += earned;
+      showAlert(`Simulated +${days} days at ${(state.annualApyBps / 100).toFixed(2)}% APY on ${formatGBP(floatPence)} Float: earned +${formatGBP(earned)} passive treasury interest!`);
+      renderAll();
+    }
+
+    function submitBanter(e) {
+      e.preventDefault();
+      const input = document.getElementById("banter-input");
+      const text = input.value.trim();
+      if (!text) return;
+      const user = state.users.find((u) => u.id === state.activeUserId);
+      state.banter.unshift({
+        author: user.name,
+        initials: user.initials,
+        text,
+        time: "Just now"
+      });
+      input.value = "";
+      renderAll();
+    }
+
+    function computeMetrics() {
+      const userWalletsPence = state.wallets.filter((w) => w.type === "USER_AVAILABLE").reduce((s, w) => s + w.balancePence, 0);
+      const escrowPotsPence = state.wallets.filter((w) => w.type === "GROUP_ESCROW_POT").reduce((s, w) => s + w.balancePence, 0);
+      const rolloverPotsPence = state.wallets.filter((w) => w.type === "GROUP_ROLLOVER_RESERVE").reduce((s, w) => s + w.balancePence, 0);
+      const totalFloatPence = userWalletsPence + escrowPotsPence + rolloverPotsPence;
+      const subRevPence = getWallet("wal_sub_rev").balancePence;
+      const apy = state.annualApyBps / 10000;
+      const annualYieldPence = Math.round(totalFloatPence * apy);
+      const dailyYieldPence = Math.round(annualYieldPence / 365);
+      const algebraicSum = state.wallets.reduce((s, w) => s + w.balancePence, 0);
+
+      return {
+        userWalletsPence,
+        escrowPotsPence,
+        rolloverPotsPence,
+        totalFloatPence,
+        subRevPence,
+        annualYieldPence,
+        dailyYieldPence,
+        algebraicSum
+      };
+    }
+
+    function renderAll() {
+      const m = computeMetrics();
+      const apyStr = (state.annualApyBps / 100).toFixed(2) + "%";
+      const isPhase1 = state.launchPhase === "PHASE_1_FREE_ADS";
+
+      // Phase 1 vs Phase 2 Top Toggle & Ad Banner
+      document.getElementById("phase-btn-1").className = `px-3 py-1.5 rounded-lg text-xs font-extrabold transition ${
+        isPhase1 ? "bg-amber-500 text-slate-950 shadow-sm" : "text-indigo-700 hover:bg-indigo-100/70"
+      }`;
+      document.getElementById("phase-btn-2").className = `px-3 py-1.5 rounded-lg text-xs font-extrabold transition ${
+        !isPhase1 ? "bg-indigo-600 text-white shadow-sm" : "text-indigo-700 hover:bg-indigo-100/70"
+      }`;
+
+      document.getElementById("header-mode-pill").textContent = isPhase1
+        ? "Phase 1: 100% Free-to-Use + Ads • £0 UKGC Licence"
+        : "Phase 2: Closed-Loop Wallet + 4.25% Float Treasury";
+      document.getElementById("header-mode-pill").className = isPhase1
+        ? "px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300"
+        : "px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200";
+
+      document.getElementById("phase1-ad-slot").classList.toggle("hidden", !isPhase1);
+      document.getElementById("phase1-treasury-card").classList.toggle("hidden", !isPhase1);
+
+      const licencePct = Math.min(100, Math.round((state.adRevenuePence / state.phase2LicenceTargetPence) * 100));
+      document.getElementById("phase1-ad-rev-inline").textContent = formatGBP(state.adRevenuePence);
+      document.getElementById("p1-ad-rev-total").textContent = formatGBP(state.adRevenuePence);
+      document.getElementById("p1-matchweeks-label").textContent = `${state.adMatchweeksSimulated} Matchweeks Simulated • 0% Pot Fee`;
+      document.getElementById("p1-licence-pct").textContent = `${licencePct}%`;
+      document.getElementById("p1-licence-progress-text").textContent = `${formatGBP(state.adRevenuePence)} / ${formatGBP(state.phase2LicenceTargetPence)}`;
+      document.getElementById("p1-licence-bar").style.width = `${licencePct}%`;
+
+      document.getElementById("tab-mobile").className = `px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
+        state.currentView === "MOBILE_DEMO" ? "bg-emerald-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
+      }`;
+      document.getElementById("tab-treasury").className = `px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
+        state.currentView === "TREASURY" ? "bg-emerald-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
+      }`;
+      document.getElementById("tab-pool").className = `px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
+        state.currentView === "POOL" ? "bg-emerald-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
+      }`;
+      document.getElementById("nav-float-badge").textContent = isPhase1
+        ? `Ads: ${formatGBP(state.adRevenuePence)}`
+        : formatGBP(m.totalFloatPence);
+
+      document.getElementById("user-selector").innerHTML = state.users
+        .map((u) => `<option value="${u.id}" ${u.id === state.activeUserId ? "selected" : ""}>${u.name}</option>`)
+        .join("");
+
+      // Treasury KPIs
+      const avgWalletPence = Math.round(m.userWalletsPence / state.totalPlatformUsers);
+      const totalActiveSubs = state.cohortActiveMemberships + state.subscriptions.length;
+      document.getElementById("kpi-total-float").textContent = formatGBP(m.totalFloatPence);
+      document.getElementById("kpi-avg-wallet").textContent = formatGBP(avgWalletPence);
+      document.getElementById("kpi-user-wallets").textContent = formatGBP(m.userWalletsPence);
+      document.getElementById("kpi-escrow-pots").textContent = formatGBP(m.escrowPotsPence);
+      document.getElementById("kpi-rollover-pots").textContent = formatGBP(m.rolloverPotsPence);
+      document.getElementById("kpi-sub-revenue").textContent = formatGBP(m.subRevPence);
+      document.getElementById("kpi-active-subs").textContent = `${totalActiveSubs.toLocaleString("en-GB")} / ${state.totalPlatformUsers.toLocaleString("en-GB")} Users`;
+      document.getElementById("kpi-apy-pill").textContent = `${apyStr} APY`;
+      document.getElementById("kpi-apy-label").textContent = apyStr;
+      document.getElementById("kpi-accrued-yield").textContent = formatGBP(state.accruedInterestPence);
+      document.getElementById("kpi-days-elapsed").textContent = `${state.simulatedDaysElapsed} days`;
+      document.getElementById("kpi-daily-yield").textContent = `${formatGBP(m.dailyYieldPence)} / day`;
+      document.getElementById("kpi-annual-yield").textContent = `${formatGBP(m.annualYieldPence)} / yr`;
+      document.getElementById("kpi-audit-status").textContent =
+        m.algebraicSum === 0 ? "✓ Double-Entry Zero-Sum Verified (Sum = £0.00)" : "⚠️ Ledger Mismatch";
+
+      const cohortWallet = getWallet("wal_usr_cohort");
+      document.getElementById("treasury-user-list").innerHTML =
+        `<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-xl border border-emerald-300 bg-emerald-50/70 px-3.5 py-3">
+          <div>
+            <div class="text-xs font-extrabold text-emerald-900">POOLIT 50,000-User Base (${formatGBP(avgWalletPence)} avg / account)</div>
+            <div class="text-xs text-emerald-800 mt-0.5">Total User Wallet Float: <strong>${formatGBP(m.userWalletsPence)}</strong></div>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button onclick="simulateCohortDeposit(500)" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-extrabold hover:bg-emerald-700">+£5 / User (+£250k)</button>
+          </div>
+        </div>` +
+        state.users
+          .map((u) => {
+            const uw = getUserWallet(u.id);
+            const sub = hasActiveSub(u.id);
+            return `
+              <div class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5">
+                <div>
+                  <div class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <span>${u.name}</span>
+                    <span class="px-1.5 py-0.5 rounded text-xs ${sub ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}">
+                      ${sub ? "£10/yr Active" : "Unsubscribed"}
+                    </span>
+                  </div>
+                  <div class="text-xs text-slate-500 mt-0.5">
+                    Wallet Balance: <strong class="text-emerald-700">${formatGBP(uw.balancePence)}</strong>
+                  </div>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <button onclick="quickDeposit('${u.id}', 1500)" class="px-2.5 py-1 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100">+£15</button>
+                  <button onclick="quickDeposit('${u.id}', 5000)" class="px-2.5 py-1 rounded-lg border border-emerald-300 bg-emerald-100 text-emerald-800 text-xs font-bold hover:bg-emerald-200">+£50</button>
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+
+      document.getElementById("treasury-wallets-tbody").innerHTML = state.wallets
+        .map(
+          (w) => `
+          <tr>
+            <td class="py-2.5 font-medium text-slate-900">${w.label}</td>
+            <td class="py-2.5"><span class="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 font-mono text-xs text-slate-700">${w.type}</span></td>
+            <td class="py-2.5 font-mono text-slate-500">${w.ref}</td>
+            <td class="py-2.5 text-right font-mono font-bold ${w.balancePence < 0 ? "text-rose-600" : "text-emerald-700"}">${formatGBP(w.balancePence)}</td>
+          </tr>
+        `
+        )
+        .join("");
+
+      document.getElementById("ledger-count-badge").textContent = `${state.ledger.length} Immutable Entries`;
+      document.getElementById("ledger-tx-tbody").innerHTML = state.ledger
+        .map(
+          (tx) => `
+          <tr>
+            <td class="py-2 pr-2 font-mono text-xs text-slate-500">${tx.txType}</td>
+            <td class="py-2 pr-2 text-slate-900">${tx.desc}</td>
+            <td class="py-2 pr-2 text-rose-600">${tx.debit}</td>
+            <td class="py-2 pr-2 text-emerald-700">${tx.credit}</td>
+            <td class="py-2 text-right font-mono font-bold text-slate-900">${formatGBP(tx.amountPence)}</td>
+          </tr>
+        `
+        )
+        .join("");
+
+      // Admin Builder Rendering
+      const maxGames = state.adminFormat === "EXACT_SCORE" ? 3 : 5;
+      document.getElementById("admin-format-buttons").innerHTML = `
+        <button
+          onclick="setAdminFormat('EXACT_SCORE')"
+          class="rounded-xl border p-3 text-left transition ${
+            state.adminFormat === "EXACT_SCORE"
+              ? "border-emerald-600 bg-emerald-50 ring-1 ring-emerald-600"
+              : "border-slate-200 bg-slate-50 hover:bg-slate-100"
+          }"
+        >
+          <div class="text-xs font-extrabold text-emerald-700">Exact Score (1–3 Games)</div>
+          <div class="text-xs text-slate-600 mt-0.5">Predict exact Home & Away goals for up to 3 fixtures.</div>
+        </button>
+        <button
+          onclick="setAdminFormat('OUTRIGHT_RESULT')"
+          class="rounded-xl border p-3 text-left transition ${
+            state.adminFormat === "OUTRIGHT_RESULT"
+              ? "border-indigo-600 bg-indigo-50 ring-1 ring-indigo-600"
+              : "border-slate-200 bg-slate-50 hover:bg-slate-100"
+          }"
+        >
+          <div class="text-xs font-extrabold text-indigo-700">Outright Result (1–5 Games)</div>
+          <div class="text-xs text-slate-600 mt-0.5">Predict Home Win, Draw, or Away Win (1X2) for up to 5 fixtures.</div>
+        </button>
+      `;
+
+      document.getElementById("admin-wager-presets").innerHTML = [5, 10, 20, 50, 100]
+        .map(
+          (amt) => `
+          <button
+            onclick="setAdminWagerPounds(${amt})"
+            class="px-3 py-1.5 rounded-lg border text-xs font-extrabold transition ${
+              state.adminWagerPounds === amt
+                ? "border-emerald-600 bg-emerald-600 text-white"
+                : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50"
+            }"
+          >
+            £${amt}
+          </button>
+        `
+        )
+        .join("");
+
+      document.getElementById("admin-fixture-counter").textContent = `3. Select Fixtures (${state.adminSelectedFixtureIds.length} / ${maxGames} Selected)`;
+      document.getElementById("admin-fixture-rule-badge").textContent =
+        state.adminFormat === "EXACT_SCORE" ? "Max 3 Games for Exact Score" : "Max 5 Games for Outright Result (1X2)";
+
+      document.getElementById("admin-fixtures-grid").innerHTML = ALL_FIXTURES.map((fx) => {
+        const selected = state.adminSelectedFixtureIds.includes(fx.id);
+        return `
+          <button
+            onclick="toggleAdminFixture('${fx.id}')"
+            class="flex items-center justify-between rounded-xl border px-3 py-2 text-left text-xs transition ${
+              selected
+                ? "border-emerald-600 bg-emerald-50"
+                : "border-slate-200 bg-slate-50 hover:bg-slate-100"
+            }"
+          >
+            <div>
+              <div class="font-bold text-slate-900">${fx.home} vs ${fx.away}</div>
+              <div class="text-xs text-slate-500">${fx.comp}</div>
+            </div>
+            <span class="px-2 py-0.5 rounded font-mono text-xs font-extrabold ${
+              selected ? "bg-emerald-600 text-white" : "bg-white border border-slate-300 text-slate-600"
+            }">
+              ${selected ? "✓ IN SLATE" : "+ ADD"}
+            </span>
+          </button>
+        `;
+      }).join("");
+
+      document.getElementById("admin-apply-round-btn").textContent = `⚡ Apply & Launch ${state.adminSelectedFixtureIds.length}-Game ${
+        state.adminFormat === "EXACT_SCORE" ? "Exact Score" : "Outright Result (1X2)"
+      } Round @ £${state.adminWagerPounds} Wager`;
+
+      // Active User Wallet & Membership Gate
+      const activeUser = state.users.find((u) => u.id === state.activeUserId);
+      const activeUserWallet = getUserWallet(activeUser.id);
+      const isSub = hasActiveSub(activeUser.id);
+
+      document.getElementById("pool-user-wallet-title").textContent = `CLOSED-LOOP IN-APP WALLET • ${activeUser.name.toUpperCase()}`;
+      document.getElementById("pool-user-wallet-balance").textContent = formatGBP(activeUserWallet.balancePence);
+
+      const gateCard = document.getElementById("membership-gate-card");
+      if (isPhase1) {
+        gateCard.className = "rounded-2xl border border-amber-300 bg-amber-50/80 p-5 shadow-sm lg:col-span-5";
+        gateCard.innerHTML = `
+          <div class="text-xs font-extrabold uppercase tracking-wider text-amber-900">🚀 Phase 1: 100% Free-to-Use + Ads (£0 Paywall)</div>
+          <p class="text-xs text-slate-700 mt-1">
+            No £10/yr subscription required! <strong>${activeUser.name}</strong> can join groups and submit multi-game slips for free while POOLIT monetizes 50,000 users via Matchday Sponsor Ads.
+          </p>
+        `;
+      } else if (isSub) {
+        gateCard.className = "rounded-2xl border border-emerald-200 bg-emerald-50/70 p-5 shadow-sm lg:col-span-5";
+        gateCard.innerHTML = `
+          <div class="text-xs font-extrabold uppercase tracking-wider text-emerald-700">✓ £10/Year Membership Gate Active</div>
+          <p class="text-xs text-slate-600 mt-1">
+            ${activeUser.name} holds an active £10/yr pass. Eligible to submit multi-game pool slips and win 100% of group pots.
+          </p>
+        `;
+      } else {
+        gateCard.className = "rounded-2xl border border-amber-300 bg-amber-50 p-5 shadow-sm lg:col-span-5";
+        gateCard.innerHTML = `
+          <div class="text-xs font-extrabold uppercase tracking-wider text-amber-800">🔒 £10/Year Membership Required</div>
+          <p class="text-xs text-slate-700 mt-1">
+            ${activeUser.name} does not have an active £10/yr membership. Activate now to enter this round:
+          </p>
+          <div class="flex flex-wrap gap-2 mt-3">
+            <button onclick="buyMembership('WALLET')" class="px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 text-xs font-extrabold hover:bg-amber-400">Pay £10/yr from Wallet</button>
+            <button onclick="buyMembership('DIRECT')" class="px-3 py-1.5 rounded-xl border border-amber-400 bg-white text-amber-800 text-xs font-bold hover:bg-amber-100">Pay £10/yr via Open Banking</button>
+          </div>
+        `;
+      }
+
+      document.getElementById("group-escrow-balance").textContent = formatGBP(getWallet("wal_grp_esc").balancePence);
+      document.getElementById("group-rollover-balance").textContent = formatGBP(getWallet("wal_grp_rol").balancePence);
+
+      const round = state.rounds.find((r) => r.id === state.selectedRoundId) || state.rounds[0];
+      document.getElementById("active-wager-pill").textContent = `Current Wager: ${formatGBP(round.buyInPence)}`;
+
+      document.getElementById("round-tabs").innerHTML = state.rounds
+        .map(
+          (r) => `
+          <button
+            onclick="state.selectedRoundId='${r.id}'; renderAll();"
+            class="px-3.5 py-2 rounded-xl text-xs font-bold transition ${
+              state.selectedRoundId === r.id
+                ? "bg-emerald-600 text-white shadow-sm"
+                : "border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
+            }"
+          >
+            Round #${r.number}: ${r.fixtures.length}-Game ${r.criteria === "EXACT_SCORE" ? "Exact Score" : "Outright 1X2"} (Wager ${formatGBP(r.buyInPence)} • Pot ${formatGBP(r.totalPotPence)})
+          </button>
+        `
+        )
+        .join("");
+
+      const roundPreds = state.predictions.filter((p) => p.roundId === round.id);
+      const myPred = roundPreds.find((p) => p.userId === activeUser.id);
+      const fullSweepWinners = roundPreds.filter((p) => evaluateSlip(round, p).isFullSweep);
+
+      // Render Multi-Game Match Centre Card
+      const mc = document.getElementById("match-centre-card");
+      mc.innerHTML = `
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-extrabold">
+              ${round.criteria === "EXACT_SCORE" ? `EXACT SCORE (${round.fixtures.length} / 3 Games)` : `OUTRIGHT RESULT 1X2 (${round.fixtures.length} / 5 Games)`}
+            </span>
+            <span class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-extrabold">
+              Wager: ${formatGBP(round.buyInPence)}
+            </span>
+          </div>
+          <span class="px-3 py-1 rounded-full text-xs font-extrabold ${
+            round.status === "OPEN_FOR_ENTRIES"
+              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+              : round.status === "LOCKED_LIVE"
+              ? "bg-rose-50 text-rose-700 border border-rose-200"
+              : "bg-amber-50 text-amber-800 border border-amber-200"
+          }">
+            ${
+              round.status === "OPEN_FOR_ENTRIES"
+                ? "OPEN FOR ENTRIES (PRE-KICKOFF)"
+                : round.status === "LOCKED_LIVE"
+                ? `LIVE • ${round.minute}' (${round.period})`
+                : round.status
+            }
+          </span>
+        </div>
+
+        <!-- Multi-Game Fixtures List -->
+        <div class="space-y-2">
+          ${round.fixtures
+            .map((fx, idx) => {
+              const out = deriveOutright(fx.homeScore, fx.awayScore);
+              return `
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded bg-white border border-slate-200 font-mono text-xs font-bold text-slate-500">Game #${idx + 1}</span>
+                    <span class="text-xs font-extrabold text-slate-900">${fx.home} vs ${fx.away}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="px-3 py-1 rounded-lg border border-slate-300 bg-white font-mono text-sm font-black text-slate-900">
+                      ${fx.hb} ${fx.homeScore} - ${fx.awayScore} ${fx.ab}
+                    </span>
+                    <span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-bold">
+                      ${out === "HOME" ? fx.hb + " Win (1)" : out === "AWAY" ? fx.ab + " Win (2)" : "Draw (X)"}
+                    </span>
+                    ${
+                      round.status === "OPEN_FOR_ENTRIES" || round.status === "LOCKED_LIVE"
+                        ? `<button onclick="bumpFixtureScore('${round.id}', ${idx}, 'home')" class="px-2 py-1 rounded border border-slate-300 bg-white text-slate-800 text-xs font-bold hover:bg-slate-100">+1 ${fx.hb}</button>
+                           <button onclick="bumpFixtureScore('${round.id}', ${idx}, 'away')" class="px-2 py-1 rounded border border-slate-300 bg-white text-slate-800 text-xs font-bold hover:bg-slate-100">+1 ${fx.ab}</button>`
+                        : ""
+                    }
+                  </div>
+                </div>
+              `;
+            })
+            .join("")}
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between text-xs pt-1">
+          <span class="font-extrabold text-emerald-700">Total Round Pot: ${formatGBP(round.totalPotPence)} (100% Winner Payout)</span>
+          ${
+            round.rolloverInjectedPence > 0
+              ? `<span class="text-cyan-700 font-bold">Includes ${formatGBP(round.rolloverInjectedPence)} Rollover + ${formatGBP(round.memberEntriesPence)} Wagers</span>`
+              : ""
+          }
+        </div>
+
+        <!-- Member Prediction Slip Form -->
+        ${
+          round.status === "OPEN_FOR_ENTRIES"
+            ? myPred
+              ? `<div class="rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs font-bold text-emerald-800 flex items-center justify-between">
+                  <span>✓ Your ${round.fixtures.length}-Game ${round.criteria === "EXACT_SCORE" ? "Exact Score" : "Outright Result"} Slip is Locked!</span>
+                  <span>Wager Paid: ${formatGBP(round.buyInPence)}</span>
+                </div>`
+              : `<div class="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-extrabold text-slate-900">Submit Your ${round.fixtures.length}-Game ${round.criteria === "EXACT_SCORE" ? "Exact Score" : "Outright Result (1X2)"} Slip • Wager: ${formatGBP(round.buyInPence)}</span>
+                    <span class="text-xs text-slate-500">Hidden until Kickoff Lock</span>
+                  </div>
+                  <div class="space-y-2">
+                    ${round.fixtures
+                      .map((fx, idx) => {
+                        const dp = getDraftPick(fx.id);
+                        return `
+                          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                            <span class="text-xs font-bold text-slate-900">Game #${idx + 1}: ${fx.home} vs ${fx.away}</span>
+                            ${
+                              round.criteria === "EXACT_SCORE"
+                                ? `<div class="flex items-center gap-1.5">
+                                    <span class="text-xs font-semibold text-slate-500">${fx.hb}</span>
+                                    <input type="number" min="0" max="15" value="${dp.home}" oninput="updateDraftScore('${fx.id}', 'home', this.value)" class="w-12 rounded border border-slate-300 bg-slate-50 px-2 py-1 text-center font-bold text-xs text-slate-900" />
+                                    <span class="text-slate-400">-</span>
+                                    <input type="number" min="0" max="15" value="${dp.away}" oninput="updateDraftScore('${fx.id}', 'away', this.value)" class="w-12 rounded border border-slate-300 bg-slate-50 px-2 py-1 text-center font-bold text-xs text-slate-900" />
+                                    <span class="text-xs font-semibold text-slate-500">${fx.ab}</span>
+                                  </div>`
+                                : `<div class="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-0.5">
+                                    <button type="button" onclick="updateDraftOutright('${fx.id}', 'HOME')" class="px-2.5 py-1 rounded text-xs font-bold ${dp.outright === "HOME" ? "bg-emerald-600 text-white" : "text-slate-600"}">${fx.hb} Win (1)</button>
+                                    <button type="button" onclick="updateDraftOutright('${fx.id}', 'DRAW')" class="px-2.5 py-1 rounded text-xs font-bold ${dp.outright === "DRAW" ? "bg-emerald-600 text-white" : "text-slate-600"}">Draw (X)</button>
+                                    <button type="button" onclick="updateDraftOutright('${fx.id}', 'AWAY')" class="px-2.5 py-1 rounded text-xs font-bold ${dp.outright === "AWAY" ? "bg-emerald-600 text-white" : "text-slate-600"}">${fx.ab} Win (2)</button>
+                                  </div>`
+                            }
+                          </div>
+                        `;
+                      })
+                      .join("")}
+                  </div>
+                  <button onclick="submitPredictionSlip()" class="w-full py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-extrabold hover:bg-emerald-700 transition shadow-sm">
+                    Debit ${formatGBP(round.buyInPence)} Wager from Wallet & Lock ${round.fixtures.length}-Game Slip
+                  </button>
+                </div>`
+            : ""
+        }
+
+        <!-- Live Match Simulator Presets & Settlement Controls -->
+        <div class="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 space-y-3">
+          <div class="text-xs font-extrabold uppercase tracking-wider text-indigo-700">
+            ⚡ Multi-Game Live Simulator & Full-Time Settlement
+          </div>
+          <div class="flex flex-wrap gap-2">
+            ${
+              round.status === "OPEN_FOR_ENTRIES"
+                ? `<button onclick="lockRoundKickoff('${round.id}')" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-extrabold hover:bg-indigo-700">🔒 Lock Pot & Reveal All Slips</button>`
+                : ""
+            }
+            ${roundPreds
+              .slice(0, 2)
+              .map((p) => {
+                const u = state.users.find((x) => x.id === p.userId);
+                return `<button onclick="simulateUserWinsAllLegs('${round.id}', '${p.userId}')" class="px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs font-bold hover:bg-emerald-100">Preset: ${u.name.split(" ")[0]} Hits All ${round.fixtures.length} Games</button>`;
+              })
+              .join("")}
+            <button onclick="simulateZeroWinnersRollover('${round.id}')" class="px-3 py-1.5 rounded-lg border border-cyan-300 bg-cyan-50 text-cyan-800 text-xs font-bold hover:bg-cyan-100">Preset: Upset Slate (0 Winners -> Rollover)</button>
+          </div>
+          ${
+            round.status === "LOCKED_LIVE"
+              ? `<button onclick="settleRound('${round.id}')" class="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 text-xs font-extrabold hover:bg-amber-300 transition shadow-sm">
+                  ${
+                    fullSweepWinners.length > 0
+                      ? `🏆 Confirm Full Time & Credit 100% Pot (${formatGBP(round.totalPotPence)}) to Winner Wallet`
+                      : `🔄 Confirm Full Time (0 Winners) -> Lock ${formatGBP(round.totalPotPence)} in Group Rollover Reserve`
+                  }
+                </button>`
+              : ""
+          }
+        </div>
+      `;
+
+      // Leaderboard & Privacy Gate
+      const revealed = round.status !== "OPEN_FOR_ENTRIES";
+      document.getElementById("leaderboard-title").textContent = `Live Leaderboard (${round.fixtures.length}-Game ${round.criteria === "EXACT_SCORE" ? "Exact Score" : "Outright Result 1X2"} Slips)`;
+      document.getElementById("privacy-gate-subtitle").textContent = revealed
+        ? "Kickoff Lock active — all member slips and live leg hits are visible."
+        : "Pre-Kickoff Privacy Gate — other members' slips remain hidden until kickoff.";
+      const pBadge = document.getElementById("privacy-gate-badge");
+      pBadge.className = `px-2.5 py-1 rounded-lg text-xs font-bold ${
+        revealed ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-amber-50 text-amber-800 border border-amber-200"
+      }`;
+      pBadge.textContent = revealed ? "👁️ Slips Revealed" : "🔒 Hidden Until Kickoff";
+
+      document.getElementById("predictions-list").innerHTML = roundPreds
+        .map((p) => {
+          const u = state.users.find((x) => x.id === p.userId);
+          const canView = revealed || p.userId === activeUser.id;
+          const ev = evaluateSlip(round, p);
+          return `
+            <div class="rounded-xl border p-3.5 space-y-2 ${
+              p.outcome === "WON" || (revealed && ev.isFullSweep)
+                ? "border-emerald-400 bg-emerald-50/70"
+                : "border-slate-200 bg-slate-50"
+            }">
+              <div class="flex items-center justify-between">
+                <div class="text-xs font-bold text-slate-900">${u.name} <span class="text-slate-500 font-normal">• Wager ${formatGBP(round.buyInPence)}</span></div>
+                <div class="flex items-center gap-2">
+                  ${
+                    revealed
+                      ? `<span class="px-2 py-0.5 rounded text-xs font-bold ${ev.isFullSweep ? "bg-emerald-100 text-emerald-800" : "bg-white border border-slate-200 text-slate-600"}">${ev.correct} / ${ev.total} Games Right</span>`
+                      : ""
+                  }
+                  ${
+                    p.outcome === "WON"
+                      ? `<span class="px-2.5 py-0.5 rounded bg-emerald-600 text-white text-xs font-extrabold">🏆 WON ${formatGBP(p.payoutPence)}</span>`
+                      : revealed && ev.isFullSweep && round.status === "LOCKED_LIVE"
+                      ? `<span class="px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-xs font-extrabold">🔥 On Track for 100% Pot</span>`
+                      : ""
+                  }
+                </div>
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                ${
+                  canView
+                    ? round.fixtures
+                        .map((fx, i) => {
+                          const leg = p.picks.find((x) => x.fixtureId === fx.id) || p.picks[i];
+                          const label =
+                            round.criteria === "EXACT_SCORE"
+                              ? `${fx.hb} ${leg.home}-${leg.away} ${fx.ab}`
+                              : `${fx.hb}v${fx.ab}: ${leg.outright}`;
+                          return `<span class="px-2.5 py-1 rounded border border-slate-300 bg-white font-mono text-xs font-bold text-slate-800">${label}</span>`;
+                        })
+                        .join("")
+                    : `<span class="px-2.5 py-1 rounded bg-amber-100 text-amber-800 text-xs font-bold">🔒 ${round.fixtures.length}-Game Slip Hidden Until Kickoff</span>`
+                }
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+
+      document.getElementById("banter-feed-list").innerHTML = state.banter
+        .map(
+          (b) => `
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs space-y-1">
+            <div class="flex items-center justify-between font-bold text-slate-900">
+              <span>${b.initials} • ${b.author}</span>
+              <span class="text-slate-500">${b.time}</span>
+            </div>
+            <p class="text-slate-600 leading-relaxed">${b.text}</p>
+          </div>
+        `
+        )
+        .join("");
+
+      // Render iPhone 16 Pro Mobile Demo Screen (App Store Ready Mode)
+      const mobileNavTabs = [
+        { id: "SLATE", icon: "⚽", label: "Play Slate" },
+        { id: "KITTY", icon: "📋", label: "P2P Kitty" },
+        { id: "BANTER", icon: "💬", label: "Banter" },
+        { id: "LEGAL", icon: "🛡️", label: "Legal / 17+" }
+      ];
+      document.getElementById("mobile-bottom-nav").innerHTML = mobileNavTabs
+        .map(
+          (t) => `
+          <button
+            onclick="setMobileTab('${t.id}')"
+            class="flex flex-col items-center justify-center rounded-xl py-1.5 text-[11px] font-extrabold transition ${
+              state.mobileTab === t.id
+                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                : "text-slate-500 hover:text-slate-900"
+            }"
+          >
+            <span class="text-sm">${t.icon}</span>
+            <span>${t.label}</span>
+          </button>
+        `
+        )
+        .join("");
+
+      const mobileBody = document.getElementById("mobile-screen-body");
+      if (state.mobileTab === "SLATE") {
+        mobileBody.innerHTML = `
+          <div class="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-3 space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-black uppercase text-emerald-800">
+                Round #${round.number} • ${round.fixtures.length}-Game ${round.criteria === "EXACT_SCORE" ? "Exact Score" : "Outright 1X2"}
+              </span>
+              <span class="px-2 py-0.5 rounded-full bg-white border border-emerald-200 text-[10px] font-extrabold text-emerald-700">
+                100% Free Entry
+              </span>
+            </div>
+            <div class="text-xs font-bold text-slate-800">
+              Playing as: <span class="text-emerald-700">${activeUser.name}</span>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            ${round.fixtures
+              .map((fx, idx) => {
+                const dp = getDraftPick(fx.id);
+                return `
+                  <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+                    <div class="flex items-center justify-between text-[11px]">
+                      <span class="font-bold text-slate-500">${fx.comp}</span>
+                      <span class="font-mono font-bold text-slate-700">Live: ${fx.hb} ${fx.homeScore}-${fx.awayScore} ${fx.ab}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs font-extrabold text-slate-900">${fx.home} vs ${fx.away}</span>
+                      ${
+                        round.criteria === "EXACT_SCORE"
+                          ? `<div class="flex items-center gap-1">
+                              <input type="number" min="0" max="15" value="${dp.home}" oninput="updateDraftScore('${fx.id}', 'home', this.value)" class="w-10 rounded-lg border border-slate-300 bg-white py-1 text-center font-black text-xs text-slate-900" />
+                              <span class="text-xs font-bold text-slate-400">-</span>
+                              <input type="number" min="0" max="15" value="${dp.away}" oninput="updateDraftScore('${fx.id}', 'away', this.value)" class="w-10 rounded-lg border border-slate-300 bg-white py-1 text-center font-black text-xs text-slate-900" />
+                            </div>`
+                          : `<div class="inline-flex rounded-lg border border-slate-200 bg-white p-0.5">
+                              <button type="button" onclick="updateDraftOutright('${fx.id}', 'HOME')" class="px-2 py-0.5 rounded text-[10px] font-extrabold ${dp.outright === "HOME" ? "bg-emerald-600 text-white" : "text-slate-600"}">1</button>
+                              <button type="button" onclick="updateDraftOutright('${fx.id}', 'DRAW')" class="px-2 py-0.5 rounded text-[10px] font-extrabold ${dp.outright === "DRAW" ? "bg-emerald-600 text-white" : "text-slate-600"}">X</button>
+                              <button type="button" onclick="updateDraftOutright('${fx.id}', 'AWAY')" class="px-2 py-0.5 rounded text-[10px] font-extrabold ${dp.outright === "AWAY" ? "bg-emerald-600 text-white" : "text-slate-600"}">2</button>
+                            </div>`
+                      }
+                    </div>
+                  </div>
+                `;
+              })
+              .join("")}
+          </div>
+
+          ${
+            myPred
+              ? `<div class="rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-center text-xs font-extrabold text-emerald-800">
+                  ✓ Your ${round.fixtures.length}-Game Slip is Locked for Round #${round.number}!
+                </div>`
+              : `<button onclick="submitPredictionSlip()" class="w-full py-3 rounded-xl bg-emerald-600 text-white text-xs font-black shadow-sm hover:bg-emerald-700 transition">
+                  🔒 Lock My ${round.fixtures.length}-Game Prediction Slip (Free)
+                </button>`
+          }
+
+          <div class="pt-2 border-t border-slate-200 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold text-slate-900">Group Leaderboard (${roundPreds.length} Slips)</span>
+              <button onclick="triggerMobileKickoffWithAd()" class="text-[11px] font-extrabold text-amber-700 underline">
+                ${revealed ? "👁️ Slips Revealed" : "Tap to Trigger Kickoff + Ad"}
+              </button>
+            </div>
+            ${roundPreds
+              .map((p) => {
+                const u = state.users.find((x) => x.id === p.userId);
+                const ev = evaluateSlip(round, p);
+                const canSee = revealed || p.userId === activeUser.id;
+                return `
+                  <div class="rounded-xl border border-slate-200 bg-white p-2.5 flex items-center justify-between text-xs">
+                    <div>
+                      <div class="font-bold text-slate-900">${u.name.split(" (")[0]}</div>
+                      <div class="text-[11px] text-slate-500 mt-0.5">
+                        ${
+                          canSee
+                            ? round.fixtures
+                                .map((fx, i) => {
+                                  const leg = p.picks.find((x) => x.fixtureId === fx.id) || p.picks[i];
+                                  return round.criteria === "EXACT_SCORE" ? `${fx.hb} ${leg.home}-${leg.away}` : `${fx.hb}:${leg.outright}`;
+                                })
+                                .join(" • ")
+                            : "🔒 Hidden until kickoff"
+                        }
+                      </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold">
+                      ${ev.correct}/${ev.total} Hits
+                    </span>
+                  </div>
+                `;
+              })
+              .join("")}
+          </div>
+        `;
+      } else if (state.mobileTab === "KITTY") {
+        mobileBody.innerHTML = `
+          <div class="rounded-2xl border border-indigo-200 bg-indigo-50/70 p-3.5 space-y-1">
+            <div class="text-xs font-black text-indigo-950">📋 Group Treasurer P2P Kitty Checklist</div>
+            <p class="text-[11px] text-slate-600 leading-relaxed">
+              <strong>App Store Compliant:</strong> POOLIT does not process or hold gambling funds in Phase 1. Group Admin <strong>Marcus Vance</strong> uses this checklist to mark who settled their private social kitty outside the app.
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            ${state.users
+              .map((u) => {
+                const paid = state.p2pPaidUserIds.includes(u.id);
+                return `
+                  <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 flex items-center justify-between">
+                    <div>
+                      <div class="text-xs font-bold text-slate-900">${u.name.split(" (")[0]}</div>
+                      <div class="text-[11px] text-slate-500">Round #${round.number} Social Tracker</div>
+                    </div>
+                    <button
+                      onclick="toggleP2pPaid('${u.id}')"
+                      class="px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition ${
+                        paid
+                          ? "bg-emerald-600 text-white"
+                          : "bg-amber-100 text-amber-900 border border-amber-300"
+                      }"
+                    >
+                      ${paid ? "✓ Marked Settled P2P" : "⏳ Tap to Mark Settled"}
+                    </button>
+                  </div>
+                `;
+              })
+              .join("")}
+          </div>
+        `;
+      } else if (state.mobileTab === "BANTER") {
+        mobileBody.innerHTML = `
+          <div class="text-xs font-extrabold text-slate-900">💬 Live Group Banter Feed</div>
+          <div class="space-y-2">
+            ${state.banter
+              .map(
+                (b) => `
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-xs space-y-1">
+                  <div class="flex justify-between font-bold text-slate-900">
+                    <span>${b.author}</span>
+                    <span class="text-[10px] text-slate-400">${b.time}</span>
+                  </div>
+                  <p class="text-slate-600 text-[11px]">${b.text}</p>
+                </div>
+              `
+              )
+              .join("")}
+          </div>
+        `;
+      } else {
+        mobileBody.innerHTML = `
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 space-y-2 text-xs">
+            <div class="font-black text-slate-900">🛡️ Apple App Store &amp; Google Play Compliance</div>
+            <p class="text-[11px] text-slate-600 leading-relaxed">
+              <strong>1. Non-Gambling Utility Disclosure (Guideline 5.3):</strong> POOLIT is a 100% free-to-play social score prediction and private league tracking utility. No real money is deposited, staked, or paid out inside this application.
+            </p>
+            <p class="text-[11px] text-slate-600 leading-relaxed">
+              <strong>2. Official Non-Sponsorship Notice (Guideline 5.3.1):</strong> Apple Inc. and Google LLC are not sponsors of, nor affiliated with, any private group prediction leagues or leaderboards tracked within POOLIT.
+            </p>
+            <p class="text-[11px] text-slate-600 leading-relaxed">
+              <strong>3. Age Rating:</strong> Rated 17+ / 18+ Social Sports Utility.
+            </p>
+          </div>
+
+          <div class="rounded-2xl border border-rose-200 bg-rose-50/60 p-3.5 space-y-2">
+            <div class="text-xs font-extrabold text-rose-900">Account &amp; Data Controls (Apple Guideline 5.1.1v)</div>
+            <p class="text-[11px] text-slate-600">
+              Users can permanently delete their account and prediction history inside the app at any time:
+            </p>
+            <button
+              onclick="simulateDeleteAccountCompliance()"
+              class="w-full py-2 rounded-xl bg-rose-600 text-white text-xs font-extrabold hover:bg-rose-700 transition"
+            >
+              Delete My Account &amp; Personal Data
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    renderAll();
+  </script>
+</body>
+</html>
