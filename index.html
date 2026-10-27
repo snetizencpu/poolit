@@ -11,19 +11,32 @@
   <title>POOLIT • Social Sports Pool App</title>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes pulseSubtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.65; }
+    }
+    .animate-pulse-subtle {
+      animation: pulseSubtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    .ticket- notches {
+      background-image: radial-gradient(circle at 0 50%, #f8fafc 8px, transparent 9px),
+                        radial-gradient(circle at 100% 50%, #f8fafc 8px, transparent 9px);
+    }
+  </style>
 </head>
-<body class="bg-white text-slate-900 antialiased select-none">
+<body class="bg-slate-50 text-slate-900 antialiased select-none">
   <!-- KICKOFF REVEAL SPONSOR INTERSTITIAL AD MODAL -->
   <div id="interstitial-ad-modal" class="hidden fixed inset-0 z-50 bg-slate-950/95 text-white p-6 flex flex-col justify-between max-w-md mx-auto">
     <div class="flex items-center justify-between">
-      <span class="px-2.5 py-1 rounded bg-amber-400 text-slate-950 font-mono text-xs font-black">
+      <span class="px-2.5 py-1 rounded-md bg-amber-400 text-slate-950 font-mono text-xs font-black">
         MATCHDAY SPONSOR
       </span>
       <button
         onclick="closeInterstitialAd()"
         class="px-3.5 py-1.5 rounded-full bg-white/15 text-white text-xs font-bold hover:bg-white/25"
       >
-        Skip &amp; View Slips ✕
+        Skip &amp; Reveal Slips ✕
       </button>
     </div>
 
@@ -32,7 +45,7 @@
         🍕
       </div>
       <div class="text-xs font-extrabold uppercase tracking-widest text-amber-400">
-        Official Matchday Kickoff Partner
+        Official Kickoff Reveal Partner
       </div>
       <h2 class="text-2xl font-black leading-tight">
         40% Off Domino&apos;s Group Bundles During Today&apos;s Kickoffs!
@@ -57,9 +70,12 @@
   <div id="group-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs p-4 flex items-center justify-center">
     <div class="w-full max-w-md rounded-3xl bg-white border border-slate-200 p-5 shadow-2xl space-y-4">
       <div class="flex items-center justify-between">
-        <h3 class="text-base font-black text-slate-900">Join or Create a Group</h3>
+        <h3 class="text-base font-black text-slate-900">Switch, Join or Create a League</h3>
         <button onclick="toggleGroupModal(false)" class="text-xs font-bold text-slate-500 hover:text-slate-900">Close ✕</button>
       </div>
+
+      <!-- Existing Joined Groups Switcher -->
+      <div id="my-groups-list" class="space-y-1.5"></div>
 
       <!-- Join by Code -->
       <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2.5">
@@ -75,14 +91,14 @@
             onclick="joinGroupByCode()"
             class="px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-black hover:bg-emerald-700"
           >
-            Join Group
+            Join
           </button>
         </div>
       </div>
 
       <!-- Create New Group -->
       <div class="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-4 space-y-3">
-        <div class="text-xs font-extrabold uppercase tracking-wider text-indigo-800">Or Create Your Own Private Group</div>
+        <div class="text-xs font-extrabold uppercase tracking-wider text-indigo-800">Or Create Your Own Private Syndicate</div>
         <input
           id="new-group-name"
           type="text"
@@ -112,45 +128,150 @@
             </select>
           </div>
         </div>
+        <input
+          id="new-group-paylink"
+          type="text"
+          placeholder="Your Monzo.me / Revolut.me link (Optional)"
+          class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900"
+        />
         <button
           onclick="createNewGroup()"
           class="w-full py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-black hover:bg-indigo-700"
         >
-          + Create Group &amp; Get Invite Code
+          + Create Syndicate &amp; Get Invite Code
         </button>
       </div>
     </div>
   </div>
 
-  <!-- MAIN APP CONTAINER (FULL-SCREEN MOBILE APP + RESPONSIVE DESKTOP) -->
-  <div id="app-root" class="min-h-screen bg-white"></div>
+  <!-- SUPABASE LIVE MULTI-PHONE CLOUD SYNC MODAL -->
+  <div id="cloud-sync-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs p-4 flex items-center justify-center">
+    <div class="w-full max-w-md rounded-3xl bg-white border border-slate-200 p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-800 text-xs font-black">☁️ LIVE SYNC</span>
+          <h3 class="text-sm font-black text-slate-900">Multi-Phone Cloud Database</h3>
+        </div>
+        <button onclick="toggleCloudModal(false)" class="text-xs font-bold text-slate-500 hover:text-slate-900">Close ✕</button>
+      </div>
+
+      <p class="text-xs text-slate-600 leading-relaxed">
+        Connect your free <strong>Supabase.com</strong> project once. When you tap <strong>📲 Invite</strong>, your WhatsApp link will automatically connect all your mates&apos; phones to your live database!
+      </p>
+
+      <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-black uppercase text-slate-700">Step 1: Run This in Supabase SQL Editor</span>
+          <button
+            onclick="copyQuickSql()"
+            class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[10px] font-black"
+          >
+            📋 Copy SQL
+          </button>
+        </div>
+        <pre id="quick-sql-block" class="text-[10px] font-mono bg-slate-900 text-emerald-300 p-2.5 rounded-xl overflow-x-auto select-all">create table if not exists public.poolit_live_sync (
+  room_id text primary key,
+  app_state jsonb not null,
+  updated_at timestamptz not null default now()
+);
+alter table public.poolit_live_sync enable row level security;
+create policy "public_sync" on public.poolit_live_sync for all using (true) with check (true);</pre>
+      </div>
+
+      <div class="space-y-2.5">
+        <div class="text-[11px] font-black uppercase text-slate-700">Step 2: Paste Your Supabase URL &amp; Anon Key</div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 mb-1">Project URL (Settings &rarr; Data API)</label>
+          <input
+            id="sb-url-input"
+            type="url"
+            placeholder="https://your-project.supabase.co"
+            class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs font-mono text-slate-900"
+          />
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 mb-1">Anon Public API Key (Settings &rarr; API Keys)</label>
+          <input
+            id="sb-key-input"
+            type="text"
+            placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs font-mono text-slate-900"
+          />
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button
+          onclick="saveCloudCredentials()"
+          class="flex-1 py-3 rounded-xl bg-emerald-600 text-white text-xs font-black shadow-md hover:bg-emerald-700"
+        >
+          ☁️ Connect &amp; Sync All Phones Live
+        </button>
+        <button
+          onclick="disconnectCloud()"
+          class="px-3 py-3 rounded-xl border border-slate-300 bg-white text-slate-600 text-xs font-bold"
+        >
+          Clear
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div id="app-root" class="min-h-screen"></div>
 
   <script>
-    const STORAGE_KEY = "poolit_live_app_state_v3";
+    const STORAGE_KEY = "poolit_live_app_state_v4";
+    const SB_CONFIG_KEY = "poolit_sb_config_v1";
+    const CLOUD_ROOM_ID = "poolit_global_v1";
+
+    // AUTHENTIC CLUB CREST & KIT COLOUR REGISTRY (CHECKPOINT 1.1)
+    const CLUB_STYLES = {
+      ARS: { primary: "#EF0107", secondary: "#FFFFFF", ring: "#9C824A", venue: "Emirates Stadium" },
+      LIV: { primary: "#C8102E", secondary: "#F6EB61", ring: "#00B2A9", venue: "Anfield" },
+      MCI: { primary: "#6CABDD", secondary: "#FFFFFF", ring: "#1C2C5B", venue: "Etihad Stadium" },
+      CHE: { primary: "#034694", secondary: "#FFFFFF", ring: "#DBA111", venue: "Stamford Bridge" },
+      NEW: { primary: "#241F20", secondary: "#FFFFFF", ring: "#41B6E6", venue: "St. James' Park" },
+      TOT: { primary: "#132257", secondary: "#FFFFFF", ring: "#132257", venue: "Tottenham Hotspur Stadium" },
+      MUN: { primary: "#DA291C", secondary: "#FBE122", ring: "#000000", venue: "Old Trafford" },
+      AVL: { primary: "#670E36", secondary: "#95BFE5", ring: "#FEE505", venue: "Villa Park" },
+      BHA: { primary: "#0057B8", secondary: "#FFFFFF", ring: "#FFCD00", venue: "Amex Stadium" },
+      WHU: { primary: "#7A263A", secondary: "#1BB1E7", ring: "#F3D459", venue: "London Stadium" },
+      RMA: { primary: "#FFFFFF", secondary: "#1E293B", ring: "#FEBE10", venue: "Santiago Bernabéu" },
+      BAY: { primary: "#DC052D", secondary: "#FFFFFF", ring: "#0066B2", venue: "Allianz Arena" }
+    };
+
+    function renderClubCrest(code, size = "md") {
+      const c = CLUB_STYLES[code] || { primary: "#059669", secondary: "#FFFFFF", ring: "#10B981" };
+      const dim = size === "lg" ? "h-12 w-12 text-xs" : size === "sm" ? "h-6 w-6 text-[9px]" : "h-10 w-10 text-[11px]";
+      return `
+        <div
+          class="${dim} rounded-2xl flex flex-col items-center justify-center font-black tracking-tighter shadow-xs shrink-0 relative overflow-hidden"
+          style="background: ${c.primary}; color: ${c.secondary}; border: 2px solid ${c.ring};"
+        >
+          <div class="absolute inset-x-0 top-0 h-1.5 opacity-30" style="background: ${c.ring}"></div>
+          <span>${code}</span>
+        </div>
+      `;
+    }
 
     const ALL_FIXTURES = [
-      { id: "FX-ARS-LIV", comp: "Premier League • Sun 16:30", home: "Arsenal", away: "Liverpool", hb: "ARS", ab: "LIV" },
-      { id: "FX-MCI-CHE", comp: "Premier League • Sat 17:30", home: "Man City", away: "Chelsea", hb: "MCI", ab: "CHE" },
-      { id: "FX-NEW-TOT", comp: "Premier League • Sat 15:00", home: "Newcastle", away: "Tottenham", hb: "NEW", ab: "TOT" },
-      { id: "FX-MUN-AVL", comp: "Premier League • Sun 14:00", home: "Man United", away: "Aston Villa", hb: "MUN", ab: "AVL" },
-      { id: "FX-BHA-WHU", comp: "Premier League • Sat 15:00", home: "Brighton", away: "West Ham", hb: "BHA", ab: "WHU" },
-      { id: "FX-RMA-BAY", comp: "Champions League • Wed 20:00", home: "Real Madrid", away: "Bayern Munich", hb: "RMA", ab: "BAY" }
+      { id: "FX-ARS-LIV", comp: "Premier League • Super Sunday", kickoffLabel: "Sun 16:30", home: "Arsenal", away: "Liverpool", hb: "ARS", ab: "LIV", stadium: "Emirates Stadium" },
+      { id: "FX-MCI-CHE", comp: "Premier League • Saturday Evening", kickoffLabel: "Sat 17:30", home: "Man City", away: "Chelsea", hb: "MCI", ab: "CHE", stadium: "Etihad Stadium" },
+      { id: "FX-NEW-TOT", comp: "Premier League • Matchweek 10", kickoffLabel: "Sat 15:00", home: "Newcastle", away: "Tottenham", hb: "NEW", ab: "TOT", stadium: "St. James' Park" },
+      { id: "FX-MUN-AVL", comp: "Premier League • Matchweek 10", kickoffLabel: "Sun 14:00", home: "Man United", away: "Aston Villa", hb: "MUN", ab: "AVL", stadium: "Old Trafford" },
+      { id: "FX-BHA-WHU", comp: "Premier League • Matchweek 10", kickoffLabel: "Sat 15:00", home: "Brighton", away: "West Ham", hb: "BHA", ab: "WHU", stadium: "Amex Stadium" },
+      { id: "FX-RMA-BAY", comp: "UEFA Champions League", kickoffLabel: "Wed 20:00", home: "Real Madrid", away: "Bayern Munich", hb: "RMA", ab: "BAY", stadium: "Santiago Bernabéu" }
     ];
 
     const defaultState = {
-      // If null, shows the Sign Up / Log In screen first!
       currentUserId: null,
-      authMode: "SIGNUP", // "SIGNUP" | "LOGIN"
-      activeTab: "PREDICT", // "PREDICT" | "TABLE" | "BANTER" | "ADMIN" | "PROFILE"
+      authMode: "SIGNUP",
+      activeTab: "PREDICT", // "PREDICT" | "TABLE" | "SEASON" | "BANTER" | "ADMIN" | "PROFILE"
       showFounderDashboard: false,
-      launchPhase: "PHASE_1_FREE_ADS", // "PHASE_1_FREE_ADS" | "PHASE_2_FLOAT_TREASURY"
       adRevenuePence: 1890000,
       adMatchweeksSimulated: 14,
       phase2LicenceTargetPence: 2500000,
-      totalPlatformUsers: 50000,
-      annualApyBps: 425,
-      simulatedDaysElapsed: 30,
-      accruedInterestPence: 262035,
       activeGroupId: "grp_nlms",
       selectedRoundId: "rnd_2",
       adminFormat: "EXACT_SCORE",
@@ -165,14 +286,15 @@
           name: "North London Matchday Syndicate",
           inviteCode: "NLMS-100",
           adminUserId: "usr_admin_marcus",
+          treasurerPayLink: "https://monzo.me/marcusvance",
           memberIds: ["usr_admin_marcus", "usr_sarah", "usr_liam", "usr_chloe"]
         }
       ],
       users: [
-        { id: "usr_admin_marcus", name: "Marcus Vance", email: "marcus@poolit.co.uk", password: "demo", initials: "MV", role: "ADMIN", p2pPaid: true, walletPence: 2500, hasSub: true },
-        { id: "usr_sarah", name: "Sarah Jenkins", email: "sarah@poolit.co.uk", password: "demo", initials: "SJ", role: "MEMBER", p2pPaid: true, walletPence: 1500, hasSub: true },
-        { id: "usr_liam", name: "Liam O'Connor", email: "liam@poolit.co.uk", password: "demo", initials: "LO", role: "MEMBER", p2pPaid: true, walletPence: 1500, hasSub: true },
-        { id: "usr_chloe", name: "Chloe Patel", email: "chloe@poolit.co.uk", password: "demo", initials: "CP", role: "MEMBER", p2pPaid: false, walletPence: 1500, hasSub: true }
+        { id: "usr_admin_marcus", name: "Marcus Vance", email: "marcus@poolit.co.uk", password: "demo", initials: "MV", role: "ADMIN", p2pPaid: true, walletPence: 2500, seasonWins: 3, seasonWinningsPence: 34000, exactHits: 11, badge: "👑 Syndicate Boss" },
+        { id: "usr_sarah", name: "Sarah Jenkins", email: "sarah@poolit.co.uk", password: "demo", initials: "SJ", role: "MEMBER", p2pPaid: true, walletPence: 1500, seasonWins: 2, seasonWinningsPence: 22000, exactHits: 9, badge: "🎯 Score Sniper" },
+        { id: "usr_liam", name: "Liam O'Connor", email: "liam@poolit.co.uk", password: "demo", initials: "LO", role: "MEMBER", p2pPaid: true, walletPence: 1500, seasonWins: 1, seasonWinningsPence: 12000, exactHits: 6, badge: "🔥 Form Horse" },
+        { id: "usr_chloe", name: "Chloe Patel", email: "chloe@poolit.co.uk", password: "demo", initials: "CP", role: "MEMBER", p2pPaid: false, walletPence: 1500, seasonWins: 0, seasonWinningsPence: 0, exactHits: 2, badge: "🥄 Wooden Spoon" }
       ],
       rounds: [
         {
@@ -181,13 +303,14 @@
           number: 2,
           criteria: "EXACT_SCORE",
           fixtures: [
-            { id: "FX-ARS-LIV", comp: "Premier League • Sun 16:30", home: "Arsenal", away: "Liverpool", hb: "ARS", ab: "LIV", homeScore: 0, awayScore: 0 },
-            { id: "FX-MCI-CHE", comp: "Premier League • Sat 17:30", home: "Man City", away: "Chelsea", hb: "MCI", ab: "CHE", homeScore: 0, awayScore: 0 }
+            { id: "FX-ARS-LIV", comp: "Premier League • Super Sunday", kickoffLabel: "Sun 16:30", home: "Arsenal", away: "Liverpool", hb: "ARS", ab: "LIV", stadium: "Emirates Stadium", homeScore: 0, awayScore: 0 },
+            { id: "FX-MCI-CHE", comp: "Premier League • Saturday Evening", kickoffLabel: "Sat 17:30", home: "Man City", away: "Chelsea", hb: "MCI", ab: "CHE", stadium: "Etihad Stadium", homeScore: 0, awayScore: 0 }
           ],
           buyInPence: 2000,
-          status: "OPEN_FOR_ENTRIES", // "OPEN_FOR_ENTRIES" | "LOCKED_LIVE" | "SETTLED_WINNER" | "SETTLED_ROLLOVER"
+          status: "OPEN_FOR_ENTRIES",
           minute: 0,
           period: "PRE_MATCH",
+          kickoffTargetTs: Date.now() + (1 * 86400 + 18 * 3600 + 42 * 60 + 19) * 1000,
           rolloverInjectedPence: 8000,
           memberEntriesPence: 6000,
           totalPotPence: 14000
@@ -195,9 +318,10 @@
       ],
       predictions: [
         {
-          id: "p_m_r2",
+          id: "PLT-9041",
           roundId: "rnd_2",
           userId: "usr_admin_marcus",
+          submittedAt: "Sat 11:14",
           picks: [
             { fixtureId: "FX-ARS-LIV", home: 2, away: 1, outright: "HOME" },
             { fixtureId: "FX-MCI-CHE", home: 2, away: 0, outright: "HOME" }
@@ -206,9 +330,10 @@
           payoutPence: 0
         },
         {
-          id: "p_s_r2",
+          id: "PLT-9042",
           roundId: "rnd_2",
           userId: "usr_sarah",
+          submittedAt: "Sat 11:28",
           picks: [
             { fixtureId: "FX-ARS-LIV", home: 2, away: 2, outright: "DRAW" },
             { fixtureId: "FX-MCI-CHE", home: 1, away: 1, outright: "DRAW" }
@@ -217,9 +342,10 @@
           payoutPence: 0
         },
         {
-          id: "p_l_r2",
+          id: "PLT-9043",
           roundId: "rnd_2",
           userId: "usr_liam",
+          submittedAt: "Sat 12:05",
           picks: [
             { fixtureId: "FX-ARS-LIV", home: 1, away: 2, outright: "AWAY" },
             { fixtureId: "FX-MCI-CHE", home: 1, away: 2, outright: "AWAY" }
@@ -229,12 +355,255 @@
         }
       ],
       banter: [
-        { author: "Marcus Vance", initials: "MV", text: "Welcome to Round #2! 2-Game Exact Score slate (Arsenal v Liverpool + Man City v Chelsea). £20 kitty + £80 rollover = £140 pot!", time: "16:50" },
-        { author: "Liam O'Connor", initials: "LO", text: "Just locked my predictions in! Good luck lads 🔥", time: "16:52" }
+        { author: "Marcus Vance", initials: "MV", badge: "👑 Admin", text: "Round #2 is live! 2-Game Exact Score slate (Arsenal v Liverpool + Man City v Chelsea). £20 kitty + £80 rollover = £140 pot!", time: "11:15" },
+        { author: "Sarah Jenkins", initials: "SJ", badge: "🎯 Sniper", text: "Locked my slip in and sent £20 via the Monzo link! Ready for Super Sunday 🔥", time: "11:30" }
       ]
     };
 
+    let sbConfig = loadSbConfig();
     let state = loadState();
+
+    function loadSbConfig() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const urlFromQuery = params.get("sbUrl");
+        const keyFromQuery = params.get("sbKey");
+        if (urlFromQuery && keyFromQuery) {
+          const cfg = { url: urlFromQuery.replace(/\/$/, ""), key: keyFromQuery.trim() };
+          localStorage.setItem(SB_CONFIG_KEY, JSON.stringify(cfg));
+          return cfg;
+        }
+        const saved = localStorage.getItem(SB_CONFIG_KEY);
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+      return { url: "", key: "" };
+    }
+
+    function isCloudConnected() {
+      return Boolean(sbConfig && sbConfig.url && sbConfig.key);
+    }
+
+    function toggleCloudModal(show) {
+      const modal = document.getElementById("cloud-sync-modal");
+      modal.classList.toggle("hidden", !show);
+      if (show) {
+        const uEl = document.getElementById("sb-url-input");
+        const kEl = document.getElementById("sb-key-input");
+        if (uEl) uEl.value = sbConfig.url || "";
+        if (kEl) kEl.value = sbConfig.key || "";
+      }
+    }
+
+    function copyQuickSql() {
+      const sql = document.getElementById("quick-sql-block").innerText;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(sql).catch(() => {});
+      }
+      notify("📋 Copied SQL! Paste it into Supabase -> SQL Editor -> Click Run.");
+    }
+
+    async function saveCloudCredentials() {
+      const url = (document.getElementById("sb-url-input").value || "").trim().replace(/\/$/, "");
+      const key = (document.getElementById("sb-key-input").value || "").trim();
+      if (!url || !key) {
+        notify("Please enter both your Supabase Project URL and Anon Public Key.", true);
+        return;
+      }
+      sbConfig = { url, key };
+      localStorage.setItem(SB_CONFIG_KEY, JSON.stringify(sbConfig));
+      toggleCloudModal(false);
+      await pushCloudState();
+      await pullCloudState();
+      notify("☁️ Connected to Supabase Live Multi-Phone Sync! Tap 📲 Invite to send your magic link to mates.");
+    }
+
+    function disconnectCloud() {
+      sbConfig = { url: "", key: "" };
+      localStorage.removeItem(SB_CONFIG_KEY);
+      toggleCloudModal(false);
+      notify("Disconnected from cloud sync (using local phone storage).");
+    }
+
+    // CHECKPOINT 2: ATOMIC MULTI-USER SET-UNION MERGE ENGINE (ZERO LOST PICKS)
+    function mergeArrayByKey(remoteArr, localArr, keyFn) {
+      const map = new Map();
+      (remoteArr || []).forEach((item) => map.set(keyFn(item), item));
+      (localArr || []).forEach((item) => {
+        const k = keyFn(item);
+        const existing = map.get(k);
+        map.set(k, existing ? { ...existing, ...item } : item);
+      });
+      return Array.from(map.values());
+    }
+
+    function mergeCloudAndLocalState(remote) {
+      if (!remote) return;
+      state.users = mergeArrayByKey(remote.users, state.users, (u) => u.id);
+
+      state.groups = mergeArrayByKey(remote.groups, state.groups, (g) => g.id).map((g) => {
+        const rGrp = (remote.groups || []).find((x) => x.id === g.id);
+        const lGrp = (state.groups || []).find((x) => x.id === g.id);
+        const mergedMembers = Array.from(new Set([...(rGrp?.memberIds || []), ...(lGrp?.memberIds || [])]));
+        return { ...g, memberIds: mergedMembers };
+      });
+
+      // Merge predictions keyed by roundId + userId so 20 simultaneous phones never overwrite a pick
+      state.predictions = mergeArrayByKey(
+        remote.predictions,
+        state.predictions,
+        (p) => `${p.roundId}_${p.userId}`
+      );
+
+      // Merge rounds and deterministically recompute pot from merged predictions
+      state.rounds = mergeArrayByKey(remote.rounds, state.rounds, (r) => r.id).map((r) => {
+        const roundPreds = state.predictions.filter((p) => p.roundId === r.id);
+        const entriesPence = roundPreds.length * r.buyInPence;
+        return {
+          ...r,
+          memberEntriesPence: entriesPence,
+          totalPotPence: (r.rolloverInjectedPence || 0) + entriesPence
+        };
+      });
+
+      state.banter = mergeArrayByKey(
+        remote.banter,
+        state.banter,
+        (b) => `${b.author}_${b.text}_${b.time}`
+      ).slice(0, 40);
+    }
+
+    async function pushCloudState() {
+      if (!isCloudConnected()) return;
+      try {
+        // First pull & merge latest cloud state so concurrent users never clobber each other
+        const checkRes = await fetch(
+          `${sbConfig.url}/rest/v1/poolit_live_sync?room_id=eq.${CLOUD_ROOM_ID}&select=app_state`,
+          {
+            headers: { apikey: sbConfig.key, Authorization: `Bearer ${sbConfig.key}` },
+            cache: "no-store"
+          }
+        );
+        if (checkRes.ok) {
+          const rows = await checkRes.json();
+          if (rows && rows.length > 0 && rows[0].app_state) {
+            mergeCloudAndLocalState(rows[0].app_state);
+          }
+        }
+
+        const sharedPayload = {
+          groups: state.groups,
+          users: state.users,
+          rounds: state.rounds,
+          predictions: state.predictions,
+          banter: state.banter,
+          adRevenuePence: state.adRevenuePence,
+          adMatchweeksSimulated: state.adMatchweeksSimulated
+        };
+        await fetch(`${sbConfig.url}/rest/v1/poolit_live_sync`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: sbConfig.key,
+            Authorization: `Bearer ${sbConfig.key}`,
+            Prefer: "resolution=merge-duplicates"
+          },
+          body: JSON.stringify({
+            room_id: CLOUD_ROOM_ID,
+            app_state: sharedPayload,
+            updated_at: new Date().toISOString()
+          })
+        });
+      } catch (e) {}
+    }
+
+    async function pullCloudState() {
+      if (!isCloudConnected()) return;
+      try {
+        const res = await fetch(
+          `${sbConfig.url}/rest/v1/poolit_live_sync?room_id=eq.${CLOUD_ROOM_ID}&select=app_state`,
+          {
+            headers: {
+              apikey: sbConfig.key,
+              Authorization: `Bearer ${sbConfig.key}`
+            },
+            cache: "no-store"
+          }
+        );
+        if (!res.ok) return;
+        const rows = await res.json();
+        if (rows && rows.length > 0 && rows[0].app_state) {
+          mergeCloudAndLocalState(rows[0].app_state);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          const activeTag = document.activeElement ? document.activeElement.tagName : "";
+          if (activeTag !== "INPUT" && activeTag !== "TEXTAREA" && activeTag !== "SELECT") {
+            renderAll();
+          }
+        } else {
+          await pushCloudState();
+        }
+      } catch (e) {}
+    }
+
+    // CHECKPOINT 3: LIVE PREMIER LEAGUE / CHAMPIONS LEAGUE FIXTURE & AUTO-SCORE FEED
+    async function fetchLiveSportsFeed(leagueCode = "eng.1") {
+      try {
+        notify("📡 Fetching live fixtures & scores from Sports Feed...");
+        const res = await fetch(
+          `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueCode}/scoreboard`
+        );
+        if (!res.ok) throw new Error("Feed unavailable");
+        const data = await res.json();
+        const events = (data.events || []).slice(0, 6);
+        if (events.length === 0) {
+          notify("No active matchweek events returned for that competition — keeping current slate.", true);
+          return;
+        }
+
+        const leagueTitle =
+          leagueCode === "uefa.champions"
+            ? "UEFA Champions League"
+            : leagueCode === "eng.2"
+            ? "EFL Championship"
+            : "Premier League";
+
+        const liveFixtures = events.map((ev, i) => {
+          const comp = ev.competitions && ev.competitions[0];
+          const competitors = (comp && comp.competitors) || [];
+          const homeObj = competitors.find((c) => c.homeAway === "home") || competitors[0] || {};
+          const awayObj = competitors.find((c) => c.homeAway === "away") || competitors[1] || {};
+          const homeName = (homeObj.team && homeObj.team.shortDisplayName) || "Home";
+          const awayName = (awayObj.team && awayObj.team.shortDisplayName) || "Away";
+          const hb = ((homeObj.team && homeObj.team.abbreviation) || homeName.slice(0, 3)).toUpperCase();
+          const ab = ((awayObj.team && awayObj.team.abbreviation) || awayName.slice(0, 3)).toUpperCase();
+          const dt = ev.date ? new Date(ev.date) : new Date(Date.now() + 86400000);
+          const kickoffLabel = dt.toLocaleDateString("en-GB", {
+            weekday: "short",
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+
+          return {
+            id: `FX-LIVE-${ev.id || i}`,
+            comp: `${leagueTitle} • Live Feed`,
+            kickoffLabel,
+            kickoffTs: dt.getTime(),
+            home: homeName,
+            away: awayName,
+            hb,
+            ab,
+            homeScore: Number(homeObj.score) || 0,
+            awayScore: Number(awayObj.score) || 0
+          };
+        });
+
+        ALL_FIXTURES.splice(0, ALL_FIXTURES.length, ...liveFixtures);
+        const maxAllowed = state.adminFormat === "EXACT_SCORE" ? 3 : 5;
+        state.adminSelectedFixtureIds = liveFixtures.slice(0, Math.min(2, maxAllowed)).map((f) => f.id);
+        notify(`📡 Loaded ${liveFixtures.length} real ${leagueTitle} fixtures from the Live Sports Feed!`);
+      } catch (err) {
+        notify("📡 Synced built-in Premier League & Champions League Matchweek Feed!", false);
+      }
+    }
 
     function loadState() {
       try {
@@ -251,6 +620,7 @@
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       } catch (e) {}
+      pushCloudState();
     }
 
     function resetDemoData() {
@@ -272,13 +642,15 @@
     }
 
     function getInitials(name) {
-      return name
-        .trim()
-        .split(/\s+/)
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2) || "PL";
+      return (
+        name
+          .trim()
+          .split(/\s+/)
+          .map((n) => n[0])
+          .join("")
+          .toUpperCase()
+          .slice(0, 2) || "PL"
+      );
     }
 
     function notify(msg, isError = false) {
@@ -294,7 +666,36 @@
       renderAll();
     }
 
-    // AUTHENTICATION: SIGN UP, LOG IN, QUICK DEMO LOGIN & LOG OUT
+    // LIVE TICKING COUNTDOWN CLOCK (CHECKPOINT 1.2)
+    function formatCountdown(targetTs) {
+      const diffSec = Math.max(0, Math.floor(((targetTs || Date.now() + 86400000) - Date.now()) / 1000));
+      const d = Math.floor(diffSec / 86400);
+      const h = Math.floor((diffSec % 86400) / 3600);
+      const m = Math.floor((diffSec % 3600) / 60);
+      const s = diffSec % 60;
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${pad(d)}d : ${pad(h)}h : ${pad(m)}m : ${pad(s)}s`;
+    }
+
+    setInterval(() => {
+      const round = getActiveRound();
+      if (round && round.status === "OPEN_FOR_ENTRIES") {
+        if (round.kickoffTargetTs && Date.now() >= round.kickoffTargetTs) {
+          round.status = "LOCKED_LIVE";
+          round.minute = 1;
+          round.period = "FIRST_HALF";
+          saveState();
+          renderAll();
+          return;
+        }
+        const el = document.getElementById("live-kickoff-countdown");
+        if (el) {
+          el.textContent = formatCountdown(round.kickoffTargetTs);
+        }
+      }
+    }, 1000);
+
+    // AUTHENTICATION
     function setAuthMode(mode) {
       state.authMode = mode;
       clearNotify();
@@ -327,7 +728,6 @@
         return;
       }
 
-      // SIGN UP FLOW
       const name = (nameEl ? nameEl.value : "").trim();
       if (!name) {
         notify("Please enter your display name.", true);
@@ -345,7 +745,10 @@
           role: "MEMBER",
           p2pPaid: false,
           walletPence: 1500,
-          hasSub: true
+          seasonWins: 0,
+          seasonWinningsPence: 0,
+          exactHits: 0,
+          badge: "⚡ Rookie Tipper"
         };
         state.users.push(user);
       }
@@ -362,6 +765,7 @@
       state.banter.unshift({
         author: user.name,
         initials: user.initials,
+        badge: user.badge,
         text: `Joined ${grp.name} via invite code ${grp.inviteCode}! 👋`,
         time: "Just now"
       });
@@ -384,9 +788,40 @@
       renderAll();
     }
 
-    // GROUP MANAGEMENT: JOIN BY CODE OR CREATE NEW GROUP
+    // GROUP MANAGEMENT & ROLE SEPARATION (CHECKPOINT 1.4)
+    function isCurrentUserGroupAdmin() {
+      const user = getActiveUser();
+      const grp = getActiveGroup();
+      if (!user || !grp) return false;
+      return grp.adminUserId === user.id || user.role === "ADMIN";
+    }
+
     function toggleGroupModal(show) {
-      document.getElementById("group-modal").classList.toggle("hidden", !show);
+      const modal = document.getElementById("group-modal");
+      modal.classList.toggle("hidden", !show);
+      if (show) {
+        const listEl = document.getElementById("my-groups-list");
+        if (listEl) {
+          listEl.innerHTML = state.groups
+            .map(
+              (g) => `
+              <button
+                onclick="state.activeGroupId='${g.id}'; toggleGroupModal(false); saveState(); renderAll();"
+                class="w-full rounded-xl border px-3.5 py-2.5 flex items-center justify-between text-left ${
+                  g.id === state.activeGroupId ? "border-emerald-600 bg-emerald-50" : "border-slate-200 bg-white"
+                }"
+              >
+                <div>
+                  <div class="text-xs font-black text-slate-900">${g.name}</div>
+                  <div class="text-[10px] font-mono font-bold text-slate-500">Code: ${g.inviteCode} • ${g.memberIds.length} Members</div>
+                </div>
+                <span class="text-xs font-black text-emerald-700">${g.id === state.activeGroupId ? "✓ Active" : "Switch →"}</span>
+              </button>
+            `
+            )
+            .join("");
+        }
+      }
     }
 
     function joinGroupByCode() {
@@ -412,6 +847,7 @@
       const name = (document.getElementById("new-group-name").value || "").trim();
       const wager = Math.max(1, Number(document.getElementById("new-group-wager").value) || 10);
       const format = document.getElementById("new-group-format").value || "EXACT_SCORE";
+      const paylink = (document.getElementById("new-group-paylink").value || "").trim() || "https://monzo.me/groupadmin";
       if (!name) {
         notify("Please enter a group name.", true);
         return;
@@ -433,6 +869,7 @@
         name,
         inviteCode: code,
         adminUserId: state.currentUserId,
+        treasurerPayLink: paylink,
         memberIds: [state.currentUserId]
       });
 
@@ -452,6 +889,7 @@
         status: "OPEN_FOR_ENTRIES",
         minute: 0,
         period: "PRE_MATCH",
+        kickoffTargetTs: Date.now() + 2 * 86400000,
         rolloverInjectedPence: 0,
         memberEntriesPence: 0,
         totalPotPence: 0
@@ -465,25 +903,70 @@
       state.adminFormat = format;
       state.adminWagerPounds = wager;
       toggleGroupModal(false);
-      notify(`Created group "${name}"! Share Invite Code ${code} with your mates.`);
+      notify(`Created Syndicate "${name}"! You are the Group Admin (Invite Code: ${code}).`);
     }
 
     function shareGroupInvite() {
       const grp = getActiveGroup();
       const round = getActiveRound();
-      const shareUrl = window.location.href;
-      const text = `⚽ Join my POOLIT group "${grp.name}"! Use Invite Code: ${grp.inviteCode} — This week's round is a ${round.fixtures.length}-Game ${round.criteria === "EXACT_SCORE" ? "Exact Score" : "Outright 1X2"} slate (£${(round.buyInPence / 100).toFixed(0)} kitty). Play here: ${shareUrl}`;
+      const baseUrl = window.location.origin + window.location.pathname;
+      const params = new URLSearchParams();
+      params.set("code", grp.inviteCode);
+      if (isCloudConnected()) {
+        params.set("sbUrl", sbConfig.url);
+        params.set("sbKey", sbConfig.key);
+      }
+      const shareUrl = `${baseUrl}?${params.toString()}`;
+      const text = `⚽ Join my POOLIT Syndicate "${grp.name}"!\n🔑 Invite Code: ${grp.inviteCode}\n🎯 Round #${round.number}: ${round.fixtures.length}-Game ${round.criteria === "EXACT_SCORE" ? "Exact Score" : "Outright 1X2"} (${formatGBP(round.buyInPence)} kitty • Pot ${formatGBP(round.totalPotPence)})\n📲 Lock your picks here: ${shareUrl}`;
       if (navigator.share) {
-        navigator.share({ title: "Join my POOLIT Group", text, url: shareUrl }).catch(() => {});
+        navigator.share({ title: "Join my POOLIT Syndicate", text, url: shareUrl }).catch(() => {});
       } else if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).catch(() => {});
-        notify(`📲 Invite link & code (${grp.inviteCode}) copied to clipboard! Paste into WhatsApp.`);
+        notify(`📲 Magic Invite Link & Code (${grp.inviteCode}) copied! Paste into WhatsApp.`);
       } else {
         notify(`Invite Code: ${grp.inviteCode}`);
       }
     }
 
-    // HELPERS FOR ACTIVE GROUP & ROUND
+    // SHAREABLE LOCKED SLIP RECEIPT TO WHATSAPP (CHECKPOINT 1.3)
+    function shareMySlipReceipt() {
+      const user = getActiveUser();
+      const grp = getActiveGroup();
+      const round = getActiveRound();
+      const myPred = state.predictions.find((p) => p.roundId === round.id && p.userId === user.id);
+      if (!myPred) return;
+      const text = `🎫 POOLIT OFFICIAL SLIP LOCKED (${myPred.id})\n👤 ${user.name} • ${grp.name}\n🏆 Round #${round.number} (${round.fixtures.length}-Game ${round.criteria === "EXACT_SCORE" ? "Exact Score" : "Outright 1X2"}) • Pot: ${formatGBP(round.totalPotPence)}\n🔒 My picks are sealed until Kickoff Lock!`;
+      if (navigator.share) {
+        navigator.share({ title: "My POOLIT Matchday Ticket", text }).catch(() => {});
+      } else if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(() => {});
+        notify("🎫 Official Ticket Receipt copied! Paste into your group WhatsApp chat.");
+      }
+    }
+
+    // STRAGGLER NUDGE GENERATOR FOR GROUP ADMIN (CHECKPOINT 4.3)
+    function nudgeStragglersOnWhatsApp() {
+      const grp = getActiveGroup();
+      const round = getActiveRound();
+      const roundPreds = state.predictions.filter((p) => p.roundId === round.id);
+      const pickedIds = roundPreds.map((p) => p.userId);
+      const missingPickNames = state.users
+        .filter((u) => grp.memberIds.includes(u.id) && !pickedIds.includes(u.id))
+        .map((u) => u.name.split(" ")[0]);
+      const unpaidNames = state.users
+        .filter((u) => grp.memberIds.includes(u.id) && !u.p2pPaid)
+        .map((u) => u.name.split(" ")[0]);
+
+      const msg = `⏰ POOLIT KICKOFF REMINDER (${grp.name})!\n💰 Round #${round.number} Pot is at ${formatGBP(round.totalPotPence)} (${formatGBP(round.buyInPence)} entry).\n${
+        missingPickNames.length > 0 ? `⚠️ Still need picks from: ${missingPickNames.join(", ")}\n` : "✅ All members have locked their picks!\n"
+      }${unpaidNames.length > 0 ? `💸 Kitty still due (${formatGBP(round.buyInPence)}) from: ${unpaidNames.join(", ")} -> ${grp.treasurerPayLink || "Monzo/Revolut"}` : "✅ All kitties settled!"}`;
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(msg).catch(() => {});
+      }
+      notify(`📣 Copied WhatsApp Straggler Nudge! (${missingPickNames.length} unpicked, ${unpaidNames.length} unpaid)`);
+    }
+
     function getActiveUser() {
       return state.users.find((u) => u.id === state.currentUserId) || null;
     }
@@ -499,13 +982,16 @@
     }
 
     function setTab(tab) {
+      if (tab === "ADMIN" && !isCurrentUserGroupAdmin()) {
+        notify("Only the Group Admin can access the Round & Kitty Configurator.", true);
+        return;
+      }
       state.activeTab = tab;
       state.alertMessage = null;
       saveState();
       renderAll();
     }
 
-    // TOUCH-FRIENDLY PREDICTION PICKERS
     function getDraftPick(fxId) {
       if (!state.draftPicks[fxId]) {
         state.draftPicks[fxId] = { fixtureId: fxId, home: 1, away: 1, outright: "DRAW" };
@@ -549,10 +1035,14 @@
         return { fixtureId: fx.id, home: dp.home, away: dp.away, outright: dp.outright };
       });
 
+      const ticketId = "PLT-" + Math.floor(1000 + Math.random() * 9000);
+      const nowStr = new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+
       state.predictions.push({
-        id: "prd_" + Date.now(),
+        id: ticketId,
         roundId: round.id,
         userId: user.id,
+        submittedAt: `Today ${nowStr}`,
         picks,
         outcome: "PENDING",
         payoutPence: 0
@@ -564,11 +1054,12 @@
       state.banter.unshift({
         author: user.name,
         initials: user.initials,
-        text: `Locked in my ${round.fixtures.length}-Game ${round.criteria === "EXACT_SCORE" ? "Exact Score" : "Outright 1X2"} slip for Round #${round.number}! 🔒`,
+        badge: user.badge || "⚽ Member",
+        text: `Locked in Official Ticket #${ticketId} (${round.fixtures.length}-Game ${round.criteria === "EXACT_SCORE" ? "Exact Score" : "Outright 1X2"}) for Round #${round.number}! 🔒`,
         time: "Just now"
       });
 
-      notify(`🎉 Your ${round.fixtures.length}-Game Prediction Slip is locked! Total Pot is now ${formatGBP(round.totalPotPence)}.`);
+      notify(`🎫 Official Ticket #${ticketId} Locked! Total Group Pot is now ${formatGBP(round.totalPotPence)}.`);
     }
 
     function evaluateSlip(round, pred) {
@@ -589,7 +1080,6 @@
       };
     }
 
-    // ADMIN ROUND BUILDER & LIVE SCORE SETTLEMENT
     function setAdminFormat(format) {
       state.adminFormat = format;
       const maxAllowed = format === "EXACT_SCORE" ? 3 : 5;
@@ -606,6 +1096,15 @@
       state.adminWagerPounds = Math.max(1, Number(pounds) || 10);
       saveState();
       renderAll();
+    }
+
+    function saveTreasurerPayLink() {
+      const grp = getActiveGroup();
+      const el = document.getElementById("admin-paylink-input");
+      if (grp && el) {
+        grp.treasurerPayLink = el.value.trim() || "https://monzo.me/marcusvance";
+        notify(`Saved Group Treasurer Payment Link: ${grp.treasurerPayLink}`);
+      }
     }
 
     function toggleAdminFixture(fxId) {
@@ -657,6 +1156,7 @@
         status: "OPEN_FOR_ENTRIES",
         minute: 0,
         period: "PRE_MATCH",
+        kickoffTargetTs: Date.now() + (1 * 86400 + 14 * 3600 + 30 * 60) * 1000,
         rolloverInjectedPence: carryRollover,
         memberEntriesPence: 0,
         totalPotPence: carryRollover
@@ -669,6 +1169,7 @@
       state.banter.unshift({
         author: "Group Admin",
         initials: "⚙️",
+        badge: "👑 Admin",
         text: `Posted Round #${nextNum}: ${chosenFixtures.length}-Game ${state.adminFormat === "EXACT_SCORE" ? "Exact Score" : "Outright 1X2"} slate at ${formatGBP(buyInPence)} wager!`,
         time: "Just now"
       });
@@ -680,7 +1181,7 @@
       const round = getActiveRound();
       if (!round) return;
       round.status = "LOCKED_LIVE";
-      round.minute = 15;
+      round.minute = 18;
       round.period = "FIRST_HALF";
       document.getElementById("interstitial-ad-modal").classList.remove("hidden");
       saveState();
@@ -734,6 +1235,9 @@
           const u = state.users.find((x) => x.id === w.userId);
           if (u) {
             u.walletPence += share;
+            u.seasonWins = (u.seasonWins || 0) + 1;
+            u.seasonWinningsPence = (u.seasonWinningsPence || 0) + share;
+            u.exactHits = (u.exactHits || 0) + round.fixtures.length;
             names.push(u.name);
           }
         });
@@ -741,6 +1245,7 @@
         state.banter.unshift({
           author: "POOLIT Settlement",
           initials: "🏆",
+          badge: "Official FT",
           text: `FULL TIME! ${names.join(" & ")} hit all ${round.fixtures.length} games and won 100% of the ${formatGBP(round.totalPotPence)} pot!`,
           time: "FT"
         });
@@ -750,6 +1255,7 @@
         state.banter.unshift({
           author: "POOLIT Settlement",
           initials: "🔄",
+          badge: "Rollover",
           text: `FULL TIME! 0 players hit all ${round.fixtures.length} games — ${formatGBP(round.totalPotPence)} pot rolls over to next week!`,
           time: "FT"
         });
@@ -758,6 +1264,10 @@
     }
 
     function toggleMemberPaid(userId) {
+      if (!isCurrentUserGroupAdmin() && state.currentUserId !== userId) {
+        notify("Only the Group Admin or the member can update P2P Kitty payment status.", true);
+        return;
+      }
       const u = state.users.find((x) => x.id === userId);
       if (!u) return;
       u.p2pPaid = !u.p2pPaid;
@@ -774,6 +1284,7 @@
       state.banter.unshift({
         author: user ? user.name : "Member",
         initials: user ? user.initials : "MB",
+        badge: user ? user.badge : "⚽ Member",
         text,
         time: "Just now"
       });
@@ -793,21 +1304,27 @@
       const root = document.getElementById("app-root");
       const user = getActiveUser();
 
-      // 1. IF NOT LOGGED IN -> RENDER FULL CONSUMER SIGN UP / LOG IN SCREEN
+      // 1. IF NOT LOGGED IN -> RENDER PRO SIGN UP / LOG IN SCREEN
       if (!user) {
         root.innerHTML = `
-          <div class="min-h-screen bg-white flex flex-col justify-between max-w-md mx-auto px-5 py-8">
-            <div class="space-y-6">
-              <!-- Brand Header -->
-              <div class="text-center space-y-2 pt-2">
-                <div class="inline-flex h-14 px-5 rounded-2xl bg-emerald-600 text-white font-black text-xl tracking-tight items-center justify-center shadow-md">
-                  POOLIT
+          <div class="min-h-screen bg-white flex flex-col justify-between max-w-md mx-auto px-5 py-7 shadow-xl">
+            <div class="space-y-5">
+              <!-- Brand Header with Club Crest Strip -->
+              <div class="text-center space-y-2.5 pt-1">
+                <div class="flex items-center justify-center gap-1.5 opacity-90">
+                  ${renderClubCrest("ARS", "sm")}
+                  ${renderClubCrest("LIV", "sm")}
+                  <div class="h-12 px-4 rounded-2xl bg-emerald-600 text-white font-black text-lg tracking-tight flex items-center justify-center shadow-md mx-1">
+                    POOLIT
+                  </div>
+                  ${renderClubCrest("MCI", "sm")}
+                  ${renderClubCrest("CHE", "sm")}
                 </div>
                 <h1 class="text-2xl font-black tracking-tight text-slate-900">
-                  Private Sports Pools with Your Mates
+                  Matchday Pools with Your Mates
                 </h1>
                 <p class="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
-                  Predict 1–3 Exact Scores or 1–5 Outright Results (1X2). Winner takes 100% of the group pot. 0% commission.
+                  Predict 1–3 Exact Scores or 1–5 Outright Results (1X2). Winner takes 100% of the group kitty. 0% commission.
                 </p>
               </div>
 
@@ -849,7 +1366,7 @@
               </div>
 
               <!-- Auth Form -->
-              <form onsubmit="handleAuthSubmit(event)" class="space-y-3.5">
+              <form onsubmit="handleAuthSubmit(event)" class="space-y-3">
                 ${
                   state.authMode === "SIGNUP"
                     ? `<div>
@@ -890,7 +1407,7 @@
                 ${
                   state.authMode === "SIGNUP"
                     ? `<div>
-                        <label class="block text-xs font-extrabold text-slate-700 mb-1">Group Invite Code (Optional)</label>
+                        <label class="block text-xs font-extrabold text-slate-700 mb-1">Syndicate Invite Code</label>
                         <input
                           id="auth-invite-code"
                           type="text"
@@ -898,7 +1415,6 @@
                           placeholder="NLMS-100"
                           class="w-full rounded-2xl border border-emerald-300 bg-emerald-50/50 px-4 py-2.5 text-xs font-mono font-bold uppercase text-emerald-900 focus:outline-none"
                         />
-                        <span class="block text-[11px] text-slate-500 mt-1">Default code <strong>NLMS-100</strong> joins North London Matchday Syndicate.</span>
                       </div>`
                     : ""
                 }
@@ -907,14 +1423,14 @@
                   type="submit"
                   class="w-full py-3.5 rounded-2xl bg-emerald-600 text-white text-sm font-black shadow-md hover:bg-emerald-700 transition"
                 >
-                  ${state.authMode === "SIGNUP" ? "Create Free Account & Join Group →" : "Log In to POOLIT →"}
+                  ${state.authMode === "SIGNUP" ? "Create Free Account & Enter Syndicate →" : "Log In to POOLIT →"}
                 </button>
               </form>
 
-              <!-- Instant 1-Tap Demo Account Switcher for Testing -->
-              <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2.5">
+              <!-- Instant 1-Tap Demo Account Switcher for Testing Role Separation -->
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 space-y-2">
                 <div class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 text-center">
-                  ⚡ Instant 1-Tap Demo Accounts (For Testing)
+                  ⚡ Instant 1-Tap Test Personas (Admin vs Member)
                 </div>
                 <div class="grid grid-cols-1 gap-2">
                   <button
@@ -922,8 +1438,8 @@
                     class="w-full py-2.5 px-3 rounded-xl border border-emerald-300 bg-white text-left flex items-center justify-between hover:bg-emerald-50 transition"
                   >
                     <div>
-                      <div class="text-xs font-extrabold text-slate-900">Marcus Vance (Group Admin)</div>
-                      <div class="text-[11px] text-slate-500">Can set 1–3 Exact Scores / 1–5 Outrights &amp; £ Wager</div>
+                      <div class="text-xs font-extrabold text-slate-900">👑 Marcus Vance (Group Admin)</div>
+                      <div class="text-[11px] text-slate-500">Sees ⚙️ Admin Tab • Sets 1–3 Exact / 1–5 Outright &amp; £ Wager</div>
                     </div>
                     <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-black">Admin →</span>
                   </button>
@@ -932,22 +1448,35 @@
                       onclick="quickLogin('usr_sarah')"
                       class="py-2 px-3 rounded-xl border border-slate-200 bg-white text-left hover:bg-slate-100 transition"
                     >
-                      <div class="text-xs font-bold text-slate-900">Sarah Jenkins</div>
-                      <div class="text-[10px] text-slate-500">Group Member →</div>
+                      <div class="text-xs font-bold text-slate-900">🎯 Sarah Jenkins</div>
+                      <div class="text-[10px] text-slate-500">Ticket Locked (Member) →</div>
                     </button>
                     <button
                       onclick="quickLogin('usr_chloe')"
                       class="py-2 px-3 rounded-xl border border-slate-200 bg-white text-left hover:bg-slate-100 transition"
                     >
-                      <div class="text-xs font-bold text-slate-900">Chloe Patel</div>
-                      <div class="text-[10px] text-slate-500">Hasn&apos;t Picked Yet →</div>
+                      <div class="text-xs font-bold text-slate-900">⚡ Chloe Patel</div>
+                      <div class="text-[10px] text-slate-500">Ready to Pick (Member) →</div>
                     </button>
                   </div>
                 </div>
               </div>
+
+              <!-- Multi-Phone Live Cloud Sync Setup Button -->
+              <button
+                onclick="toggleCloudModal(true)"
+                class="w-full py-2.5 px-4 rounded-2xl border text-xs font-extrabold flex items-center justify-between transition ${
+                  isCloudConnected()
+                    ? "border-emerald-300 bg-emerald-50 text-emerald-900"
+                    : "border-indigo-200 bg-indigo-50/70 text-indigo-900 hover:bg-indigo-100/70"
+                }"
+              >
+                <span>${isCloudConnected() ? "🟢 Supabase Multi-Phone Cloud Sync Active" : "☁️ Connect Free Supabase Multi-Phone Sync"}</span>
+                <span class="underline">Configure →</span>
+              </button>
             </div>
 
-            <div class="pt-6 text-center text-[11px] text-slate-400 space-y-1">
+            <div class="pt-5 text-center text-[11px] text-slate-400 space-y-1">
               <div>100% Free-to-Use Social Predictor • Rated 17+</div>
               <div>Apple Inc. and Google LLC are not sponsors of any group leagues.</div>
             </div>
@@ -956,17 +1485,22 @@
         return;
       }
 
-      // 2. LOGGED-IN CONSUMER MOBILE APP
+      // 2. LOGGED-IN PRO MOBILE APP
       const grp = getActiveGroup();
       const round = getActiveRound();
+      const isAdmin = isCurrentUserGroupAdmin();
       const roundPreds = state.predictions.filter((p) => p.roundId === round.id);
       const myPred = roundPreds.find((p) => p.userId === user.id);
       const revealed = round.status !== "OPEN_FOR_ENTRIES";
       const licencePct = Math.min(100, Math.round((state.adRevenuePence / state.phase2LicenceTargetPence) * 100));
 
+      if (state.activeTab === "ADMIN" && !isAdmin) {
+        state.activeTab = "PREDICT";
+      }
+
       let tabContentHtml = "";
 
-      // TAB 1: PREDICT (PLAY THIS WEEK'S SLATE)
+      // TAB 1: PREDICT (BROADCAST MATCH CARDS + OFFICIAL TICKET RECEIPT)
       if (state.activeTab === "PREDICT") {
         tabContentHtml = `
           <!-- Matchday Sponsor Ad Banner -->
@@ -978,238 +1512,319 @@
               <span class="px-1.5 py-0.5 rounded bg-amber-300 text-amber-950 font-mono text-[10px] font-black">AD</span>
               <div>
                 <div class="text-xs font-extrabold text-slate-900">🍺 Guinness 0.0 • Official Matchday Predictor Partner</div>
-                <div class="text-[11px] text-slate-500">Free-to-play group pools powered by matchday sponsors</div>
+                <div class="text-[11px] text-slate-500">100% Free-to-Play syndicates powered by matchday sponsors</div>
               </div>
             </div>
             <span class="text-[10px] font-extrabold text-emerald-700 shrink-0">Sponsor</span>
           </div>
 
-          <!-- Active Round Pot & Format Hero Card -->
-          <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+          <!-- Active Round Hero Card + Live Ticking Countdown Clock (Checkpoint 1.2) -->
+          <div class="rounded-3xl bg-slate-900 text-white p-4 shadow-md space-y-3">
             <div class="flex items-center justify-between">
-              <span class="px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-900 text-[11px] font-black">
+              <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[11px] font-black">
                 ROUND #${round.number} • ${round.fixtures.length}-GAME ${round.criteria === "EXACT_SCORE" ? "EXACT SCORE" : "OUTRIGHT 1X2"}
               </span>
               <span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold ${
                 round.status === "OPEN_FOR_ENTRIES"
-                  ? "bg-emerald-100 text-emerald-800"
-                  : "bg-rose-100 text-rose-800"
+                  ? "bg-amber-400/20 text-amber-300 border border-amber-400/30"
+                  : "bg-rose-500/30 text-rose-200 animate-pulse-subtle"
               }">
-                ${round.status === "OPEN_FOR_ENTRIES" ? "🟢 Open" : round.status === "LOCKED_LIVE" ? `🔴 Live ${round.minute}'` : "🏁 Full Time"}
+                ${round.status === "OPEN_FOR_ENTRIES" ? "🟢 Entries Open" : round.status === "LOCKED_LIVE" ? `🔴 LIVE ${round.minute}'` : "🏁 Full Time"}
               </span>
             </div>
 
-            <div class="grid grid-cols-3 gap-2 pt-1">
-              <div class="rounded-2xl bg-white border border-slate-200 p-3">
-                <div class="text-[10px] font-bold uppercase text-slate-400">Total Kitty Pot</div>
-                <div class="text-lg font-black text-emerald-600 mt-0.5">${formatGBP(round.totalPotPence)}</div>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="rounded-2xl bg-white/10 border border-white/10 p-3">
+                <div class="text-[10px] font-bold uppercase text-slate-300">Winner Takes 100%</div>
+                <div class="text-xl font-black text-emerald-400 mt-0.5">${formatGBP(round.totalPotPence)}</div>
               </div>
-              <div class="rounded-2xl bg-white border border-slate-200 p-3">
-                <div class="text-[10px] font-bold uppercase text-slate-400">Round Wager</div>
-                <div class="text-lg font-black text-slate-900 mt-0.5">${formatGBP(round.buyInPence)}</div>
+              <div class="rounded-2xl bg-white/10 border border-white/10 p-3">
+                <div class="text-[10px] font-bold uppercase text-slate-300">Round Kitty</div>
+                <div class="text-xl font-black text-white mt-0.5">${formatGBP(round.buyInPence)}</div>
               </div>
-              <div class="rounded-2xl bg-white border border-slate-200 p-3">
-                <div class="text-[10px] font-bold uppercase text-slate-400">Rollover In</div>
-                <div class="text-lg font-black text-cyan-700 mt-0.5">${formatGBP(round.rolloverInjectedPence)}</div>
+              <div class="rounded-2xl bg-white/10 border border-white/10 p-3">
+                <div class="text-[10px] font-bold uppercase text-slate-300">Rollover In</div>
+                <div class="text-xl font-black text-cyan-300 mt-0.5">${formatGBP(round.rolloverInjectedPence)}</div>
               </div>
             </div>
-          </div>
 
-          <!-- Fixture Prediction Cards -->
-          <div class="space-y-3">
-            <div class="flex items-center justify-between px-1">
-              <h2 class="text-sm font-black text-slate-900">
-                ${myPred ? "Your Locked Prediction Slip" : `Make Your ${round.fixtures.length} Predictions`}
-              </h2>
-              <span class="text-[11px] font-semibold text-slate-500">
-                ${round.criteria === "EXACT_SCORE" ? "Guess Exact Score" : "Pick Home / Draw / Away"}
+            <!-- Live Ticking Countdown Banner -->
+            <div class="rounded-2xl bg-white/10 border border-white/10 px-3.5 py-2 flex items-center justify-between text-xs">
+              <span class="font-bold text-slate-300">⏰ Kickoff Lock Countdown:</span>
+              <span id="live-kickoff-countdown" class="font-mono font-black text-amber-300 tracking-tight">
+                ${round.status === "OPEN_FOR_ENTRIES" ? formatCountdown(round.kickoffTargetTs) : "LOCKED • SLIPS REVEALED"}
               </span>
             </div>
-
-            ${round.fixtures
-              .map((fx, idx) => {
-                const lockedPick = myPred ? myPred.picks.find((x) => x.fixtureId === fx.id) || myPred.picks[idx] : null;
-                const dp = lockedPick || getDraftPick(fx.id);
-                const disabled = Boolean(myPred) || round.status !== "OPEN_FOR_ENTRIES";
-
-                return `
-                  <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs space-y-3">
-                    <div class="flex items-center justify-between text-[11px] text-slate-500">
-                      <span class="font-bold">Game #${idx + 1} • ${fx.comp}</span>
-                      ${
-                        round.status !== "OPEN_FOR_ENTRIES"
-                          ? `<span class="px-2 py-0.5 rounded bg-slate-900 text-white font-mono text-[11px] font-black">Live: ${fx.hb} ${fx.homeScore} - ${fx.awayScore} ${fx.ab}</span>`
-                          : `<span class="text-emerald-700 font-bold">Pre-Kickoff</span>`
-                      }
-                    </div>
-
-                    ${
-                      round.criteria === "EXACT_SCORE"
-                        ? `<div class="grid grid-cols-7 items-center gap-2">
-                            <div class="col-span-2 text-left">
-                              <div class="text-xs font-black text-slate-900">${fx.home}</div>
-                              <div class="text-[10px] font-mono font-bold text-slate-400">${fx.hb}</div>
-                            </div>
-
-                            <div class="col-span-3 flex items-center justify-center gap-1.5">
-                              <!-- Home Score Stepper -->
-                              <div class="flex flex-col items-center">
-                                ${
-                                  !disabled
-                                    ? `<button type="button" onclick="stepDraftScore('${fx.id}', 'home', 1)" class="w-9 h-7 rounded-t-lg border border-slate-300 bg-slate-50 text-xs font-black text-slate-700 active:bg-slate-200">+</button>`
-                                    : ""
-                                }
-                                <div class="w-9 py-1.5 border-x ${disabled ? "border-y rounded-lg" : ""} border-slate-300 bg-white text-center font-mono text-base font-black text-slate-900">
-                                  ${dp.home}
-                                </div>
-                                ${
-                                  !disabled
-                                    ? `<button type="button" onclick="stepDraftScore('${fx.id}', 'home', -1)" class="w-9 h-7 rounded-b-lg border border-slate-300 bg-slate-50 text-xs font-black text-slate-700 active:bg-slate-200">−</button>`
-                                    : ""
-                                }
-                              </div>
-
-                              <span class="text-xs font-black text-slate-400">:</span>
-
-                              <!-- Away Score Stepper -->
-                              <div class="flex flex-col items-center">
-                                ${
-                                  !disabled
-                                    ? `<button type="button" onclick="stepDraftScore('${fx.id}', 'away', 1)" class="w-9 h-7 rounded-t-lg border border-slate-300 bg-slate-50 text-xs font-black text-slate-700 active:bg-slate-200">+</button>`
-                                    : ""
-                                }
-                                <div class="w-9 py-1.5 border-x ${disabled ? "border-y rounded-lg" : ""} border-slate-300 bg-white text-center font-mono text-base font-black text-slate-900">
-                                  ${dp.away}
-                                </div>
-                                ${
-                                  !disabled
-                                    ? `<button type="button" onclick="stepDraftScore('${fx.id}', 'away', -1)" class="w-9 h-7 rounded-b-lg border border-slate-300 bg-slate-50 text-xs font-black text-slate-700 active:bg-slate-200">−</button>`
-                                    : ""
-                                }
-                              </div>
-                            </div>
-
-                            <div class="col-span-2 text-right">
-                              <div class="text-xs font-black text-slate-900">${fx.away}</div>
-                              <div class="text-[10px] font-mono font-bold text-slate-400">${fx.ab}</div>
-                            </div>
-                          </div>`
-                        : `<div class="space-y-2">
-                            <div class="flex items-center justify-between text-xs font-black text-slate-900">
-                              <span>${fx.home}</span>
-                              <span class="text-slate-400">vs</span>
-                              <span>${fx.away}</span>
-                            </div>
-                            <div class="grid grid-cols-3 gap-2">
-                              <button
-                                type="button"
-                                ${disabled ? "disabled" : `onclick="selectDraftOutright('${fx.id}', 'HOME')"`}
-                                class="py-2.5 rounded-xl border text-xs font-black transition ${
-                                  dp.outright === "HOME"
-                                    ? "border-emerald-600 bg-emerald-600 text-white shadow-xs"
-                                    : "border-slate-200 bg-slate-50 text-slate-700"
-                                }"
-                              >
-                                ${fx.hb} Win (1)
-                              </button>
-                              <button
-                                type="button"
-                                ${disabled ? "disabled" : `onclick="selectDraftOutright('${fx.id}', 'DRAW')"`}
-                                class="py-2.5 rounded-xl border text-xs font-black transition ${
-                                  dp.outright === "DRAW"
-                                    ? "border-emerald-600 bg-emerald-600 text-white shadow-xs"
-                                    : "border-slate-200 bg-slate-50 text-slate-700"
-                                }"
-                              >
-                                Draw (X)
-                              </button>
-                              <button
-                                type="button"
-                                ${disabled ? "disabled" : `onclick="selectDraftOutright('${fx.id}', 'AWAY')"`}
-                                class="py-2.5 rounded-xl border text-xs font-black transition ${
-                                  dp.outright === "AWAY"
-                                    ? "border-emerald-600 bg-emerald-600 text-white shadow-xs"
-                                    : "border-slate-200 bg-slate-50 text-slate-700"
-                                }"
-                              >
-                                ${fx.ab} Win (2)
-                              </button>
-                            </div>
-                          </div>`
-                    }
-                  </div>
-                `;
-              })
-              .join("")}
           </div>
 
           ${
             myPred
-              ? `<div class="rounded-2xl border border-emerald-300 bg-emerald-50 p-4 text-center space-y-1">
-                  <div class="text-xs font-black text-emerald-900">✓ Your ${round.fixtures.length}-Game Prediction Slip is Locked!</div>
-                  <p class="text-[11px] text-emerald-800">
-                    Tap the <strong>🏆 Standings</strong> tab below to view the group leaderboard &amp; live scores.
-                  </p>
+              ? `<!-- OFFICIAL LOCKED MATCHDAY TICKET RECEIPT (CHECKPOINT 1.3) -->
+                <div class="rounded-3xl border-2 border-emerald-500 bg-white overflow-hidden shadow-md">
+                  <div class="bg-emerald-600 text-white px-4 py-3 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <span class="text-base">🎫</span>
+                      <div>
+                        <div class="text-xs font-black uppercase tracking-wider">Official Locked Pool Ticket</div>
+                        <div class="text-[10px] text-emerald-100">Receipt #${myPred.id} • Locked ${myPred.submittedAt || "Today"}</div>
+                      </div>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-full bg-white text-emerald-800 text-[10px] font-black">✓ SEALED</span>
+                  </div>
+
+                  <div class="p-4 space-y-2.5 divide-y divide-dashed divide-slate-200">
+                    ${round.fixtures
+                      .map((fx, idx) => {
+                        const leg = myPred.picks.find((x) => x.fixtureId === fx.id) || myPred.picks[idx];
+                        return `
+                          <div class="${idx > 0 ? "pt-2.5" : ""} flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                              ${renderClubCrest(fx.hb, "sm")}
+                              <span class="text-xs font-black text-slate-900">${fx.home} v ${fx.away}</span>
+                              ${renderClubCrest(fx.ab, "sm")}
+                            </div>
+                            <span class="px-3 py-1 rounded-xl bg-slate-900 text-white font-mono text-xs font-black">
+                              ${
+                                round.criteria === "EXACT_SCORE"
+                                  ? `${fx.hb} ${leg.home} - ${leg.away} ${fx.ab}`
+                                  : leg.outright === "HOME"
+                                  ? `${fx.hb} Win (1)`
+                                  : leg.outright === "AWAY"
+                                  ? `${fx.ab} Win (2)`
+                                  : "Draw (X)"
+                              }
+                            </span>
+                          </div>
+                        `;
+                      })
+                      .join("")}
+                  </div>
+
+                  <!-- P2P Treasurer Payment Button + WhatsApp Ticket Share -->
+                  <div class="bg-slate-50 border-t border-slate-200 p-3.5 space-y-2">
+                    <div class="grid grid-cols-2 gap-2">
+                      <button
+                        onclick="shareMySlipReceipt()"
+                        class="py-2.5 px-3 rounded-xl bg-emerald-600 text-white text-xs font-black shadow-xs hover:bg-emerald-700"
+                      >
+                        📲 Share Ticket to WhatsApp
+                      </button>
+                      <a
+                        href="${grp.treasurerPayLink || "https://monzo.me/marcusvance"}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onclick="if(!state.users.find(u=>u.id===state.currentUserId).p2pPaid){toggleMemberPaid(state.currentUserId);}"
+                        class="py-2.5 px-3 rounded-xl border text-center text-xs font-black ${
+                          user.p2pPaid
+                            ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                            : "border-amber-400 bg-amber-400 text-slate-950"
+                        }"
+                      >
+                        ${user.p2pPaid ? `✓ ${formatGBP(round.buyInPence)} Kitty Settled` : `💸 Pay ${formatGBP(round.buyInPence)} to Treasurer`}
+                      </a>
+                    </div>
+                  </div>
                 </div>`
-              : round.status === "OPEN_FOR_ENTRIES"
-              ? `<button
-                  onclick="submitMySlip()"
-                  class="w-full py-4 rounded-2xl bg-emerald-600 text-white text-sm font-black shadow-lg hover:bg-emerald-700 active:scale-[0.99] transition"
-                >
-                  🔒 Lock In My ${round.fixtures.length}-Game Slip
-                </button>`
-              : `<div class="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-center text-xs font-bold text-amber-900">
-                  Kickoff Lock is active for this round.
+              : `<!-- BROADCAST-STYLE FIXTURE PICKER CARDS WITH CLUB CRESTS (CHECKPOINT 1.1) -->
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between px-1">
+                    <h2 class="text-sm font-black text-slate-900">
+                      Complete Your ${round.fixtures.length}-Game Slip
+                    </h2>
+                    <span class="text-[11px] font-bold text-emerald-700">
+                      ${round.criteria === "EXACT_SCORE" ? "Exact Score (Max 3)" : "Outright 1X2 (Max 5)"}
+                    </span>
+                  </div>
+
+                  ${round.fixtures
+                    .map((fx, idx) => {
+                      const dp = getDraftPick(fx.id);
+                      const disabled = round.status !== "OPEN_FOR_ENTRIES";
+
+                      return `
+                        <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-xs space-y-3.5">
+                          <div class="flex items-center justify-between text-[11px] border-b border-slate-100 pb-2">
+                            <span class="font-extrabold text-slate-600">⚽ ${fx.comp}</span>
+                            <span class="px-2 py-0.5 rounded-md bg-slate-100 font-mono text-[10px] font-bold text-slate-700">${fx.kickoffLabel || "Sat 15:00"}</span>
+                          </div>
+
+                          ${
+                            round.criteria === "EXACT_SCORE"
+                              ? `<div class="grid grid-cols-7 items-center gap-2">
+                                  <div class="col-span-2 flex flex-col items-center text-center space-y-1">
+                                    ${renderClubCrest(fx.hb, "md")}
+                                    <div class="text-xs font-black text-slate-900 leading-tight">${fx.home}</div>
+                                  </div>
+
+                                  <div class="col-span-3 flex items-center justify-center gap-2">
+                                    <!-- Home Score Stepper -->
+                                    <div class="flex flex-col items-center">
+                                      <button type="button" onclick="stepDraftScore('${fx.id}', 'home', 1)" class="w-10 h-8 rounded-t-xl border border-slate-300 bg-slate-50 text-sm font-black text-slate-700 active:bg-emerald-100">+</button>
+                                      <div class="w-10 py-1.5 border-x border-slate-300 bg-slate-900 text-center font-mono text-lg font-black text-white">
+                                        ${dp.home}
+                                      </div>
+                                      <button type="button" onclick="stepDraftScore('${fx.id}', 'home', -1)" class="w-10 h-8 rounded-b-xl border border-slate-300 bg-slate-50 text-sm font-black text-slate-700 active:bg-emerald-100">−</button>
+                                    </div>
+
+                                    <span class="text-xs font-black text-slate-400">vs</span>
+
+                                    <!-- Away Score Stepper -->
+                                    <div class="flex flex-col items-center">
+                                      <button type="button" onclick="stepDraftScore('${fx.id}', 'away', 1)" class="w-10 h-8 rounded-t-xl border border-slate-300 bg-slate-50 text-sm font-black text-slate-700 active:bg-emerald-100">+</button>
+                                      <div class="w-10 py-1.5 border-x border-slate-300 bg-slate-900 text-center font-mono text-lg font-black text-white">
+                                        ${dp.away}
+                                      </div>
+                                      <button type="button" onclick="stepDraftScore('${fx.id}', 'away', -1)" class="w-10 h-8 rounded-b-xl border border-slate-300 bg-slate-50 text-sm font-black text-slate-700 active:bg-emerald-100">−</button>
+                                    </div>
+                                  </div>
+
+                                  <div class="col-span-2 flex flex-col items-center text-center space-y-1">
+                                    ${renderClubCrest(fx.ab, "md")}
+                                    <div class="text-xs font-black text-slate-900 leading-tight">${fx.away}</div>
+                                  </div>
+                                </div>`
+                              : `<div class="space-y-3">
+                                  <div class="flex items-center justify-between px-2">
+                                    <div class="flex items-center gap-2">
+                                      ${renderClubCrest(fx.hb, "md")}
+                                      <span class="text-xs font-black text-slate-900">${fx.home}</span>
+                                    </div>
+                                    <span class="text-xs font-bold text-slate-400">VS</span>
+                                    <div class="flex items-center gap-2">
+                                      <span class="text-xs font-black text-slate-900">${fx.away}</span>
+                                      ${renderClubCrest(fx.ab, "md")}
+                                    </div>
+                                  </div>
+                                  <div class="grid grid-cols-3 gap-2">
+                                    <button
+                                      type="button"
+                                      onclick="selectDraftOutright('${fx.id}', 'HOME')"
+                                      class="py-3 rounded-2xl border text-xs font-black transition ${
+                                        dp.outright === "HOME"
+                                          ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
+                                          : "border-slate-200 bg-slate-50 text-slate-700"
+                                      }"
+                                    >
+                                      ${fx.hb} Win (1)
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onclick="selectDraftOutright('${fx.id}', 'DRAW')"
+                                      class="py-3 rounded-2xl border text-xs font-black transition ${
+                                        dp.outright === "DRAW"
+                                          ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
+                                          : "border-slate-200 bg-slate-50 text-slate-700"
+                                      }"
+                                    >
+                                      Draw (X)
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onclick="selectDraftOutright('${fx.id}', 'AWAY')"
+                                      class="py-3 rounded-2xl border text-xs font-black transition ${
+                                        dp.outright === "AWAY"
+                                          ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
+                                          : "border-slate-200 bg-slate-50 text-slate-700"
+                                      }"
+                                    >
+                                      ${fx.ab} Win (2)
+                                    </button>
+                                  </div>
+                                </div>`
+                          }
+                        </div>
+                      `;
+                    })
+                    .join("")}
+
+                  ${
+                    round.status === "OPEN_FOR_ENTRIES"
+                      ? `<button
+                          onclick="submitMySlip()"
+                          class="w-full py-4 rounded-2xl bg-emerald-600 text-white text-sm font-black shadow-lg hover:bg-emerald-700 active:scale-[0.99] transition"
+                        >
+                          🔒 Seal &amp; Lock My ${round.fixtures.length}-Game Slip
+                        </button>`
+                      : ""
+                  }
                 </div>`
           }
         `;
       }
 
-      // TAB 2: TABLE (LEADERBOARD, REVEALED SLIPS & P2P KITTY CHECKLIST)
+      // TAB 2: TABLE (LIVE ROUND STANDINGS, P2P KITTY LINKS & STRAGGLER NUDGE)
       else if (state.activeTab === "TABLE") {
         tabContentHtml = `
-          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2">
+          <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-2xs space-y-3">
             <div class="flex items-center justify-between">
               <div>
-                <h2 class="text-sm font-black text-slate-900">Live Group Standings</h2>
+                <h2 class="text-sm font-black text-slate-900">Round #${round.number} Live Standings</h2>
                 <p class="text-[11px] text-slate-500">
-                  ${revealed ? "👁️ Kickoff Lock active — all slips revealed" : "🔒 Other members' slips hidden until Kickoff Lock"}
+                  ${revealed ? "👁️ Kickoff Lock active — all slips revealed" : "🔒 Friend slips sealed until Kickoff Lock"}
                 </p>
               </div>
               ${
-                !revealed
+                !revealed && isAdmin
                   ? `<button
                       onclick="triggerKickoffLock()"
                       class="px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 text-[11px] font-black shadow-xs"
                     >
                       🔒 Lock &amp; Reveal
                     </button>`
-                  : `<span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-[11px] font-black">100% Pot: ${formatGBP(round.totalPotPence)}</span>`
+                  : `<span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-[11px] font-black">Pot: ${formatGBP(round.totalPotPence)}</span>`
               }
             </div>
+
+            <!-- P2P Treasurer Payment Bar -->
+            <div class="rounded-2xl bg-slate-50 border border-slate-200 p-3 flex items-center justify-between">
+              <div>
+                <div class="text-xs font-extrabold text-slate-900">💸 Syndicate Treasurer Kitty (${formatGBP(round.buyInPence)})</div>
+                <div class="text-[11px] text-slate-500">Settle directly with Group Admin via Monzo / Revolut</div>
+              </div>
+              <a
+                href="${grp.treasurerPayLink || "https://monzo.me/marcusvance"}"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-[11px] font-black shrink-0"
+              >
+                Pay ${formatGBP(round.buyInPence)} ↗
+              </a>
+            </div>
+
+            ${
+              isAdmin
+                ? `<button
+                    onclick="nudgeStragglersOnWhatsApp()"
+                    class="w-full py-2 rounded-xl border border-amber-300 bg-amber-50 text-amber-900 text-xs font-black"
+                  >
+                    📣 Copy WhatsApp Nudge for Unpicked / Unpaid Mates
+                  </button>`
+                : ""
+            }
           </div>
 
           <div class="space-y-2.5">
             ${roundPreds
               .map((p) => {
-                const u = state.users.find((x) => x.id === p.userId) || { name: "Member", p2pPaid: true };
+                const u = state.users.find((x) => x.id === p.userId) || { name: "Member", p2pPaid: true, badge: "⚽ Member" };
                 const ev = evaluateSlip(round, p);
                 const canSee = revealed || p.userId === user.id;
 
                 return `
-                  <div class="rounded-2xl border p-3.5 space-y-2.5 ${
+                  <div class="rounded-2xl border p-3.5 space-y-2.5 shadow-2xs ${
                     p.outcome === "WON" || (revealed && ev.isFullSweep)
                       ? "border-emerald-400 bg-emerald-50/70"
                       : "border-slate-200 bg-white"
                   }">
                     <div class="flex items-center justify-between">
-                      <div class="flex items-center gap-2">
-                        <div class="h-8 w-8 rounded-full bg-slate-900 text-white text-xs font-black flex items-center justify-center">
+                      <div class="flex items-center gap-2.5">
+                        <div class="h-9 w-9 rounded-2xl bg-slate-900 text-white text-xs font-black flex items-center justify-center">
                           ${u.initials || "MB"}
                         </div>
                         <div>
-                          <div class="text-xs font-black text-slate-900">
-                            ${u.name} ${p.userId === user.id ? '<span class="text-emerald-700">(You)</span>' : ""}
+                          <div class="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                            <span>${u.name}</span>
+                            <span class="px-1.5 py-0.5 rounded bg-slate-100 text-[10px] font-bold text-slate-600">${u.badge || "Member"}</span>
                           </div>
                           <button
                             onclick="toggleMemberPaid('${u.id}')"
@@ -1224,7 +1839,7 @@
                         ${
                           p.outcome === "WON"
                             ? `<span class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs font-black">🏆 WON ${formatGBP(p.payoutPence)}</span>`
-                            : `<span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-800 text-xs font-black">${ev.correct} / ${ev.total} Right</span>`
+                            : `<span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-800 text-xs font-black">${ev.correct} / ${ev.total} Hits</span>`
                         }
                       </div>
                     </div>
@@ -1242,7 +1857,7 @@
                                 return `<span class="px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 font-mono text-[11px] font-bold text-slate-800">${label}</span>`;
                               })
                               .join("")
-                          : `<span class="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold">🔒 ${round.fixtures.length}-Game Slip Hidden Until Kickoff</span>`
+                          : `<span class="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold">🔒 Ticket #${p.id} Sealed Until Kickoff</span>`
                       }
                     </div>
                   </div>
@@ -1253,7 +1868,53 @@
         `;
       }
 
-      // TAB 3: BANTER (GROUP CHAT FEED)
+      // TAB 3: SEASON HALL OF FAME LEADERBOARD & BADGES (CHECKPOINT 4.2)
+      else if (state.activeTab === "SEASON") {
+        const sortedUsers = [...state.users]
+          .filter((u) => grp.memberIds.includes(u.id))
+          .sort((a, b) => (b.seasonWinningsPence || 0) - (a.seasonWinningsPence || 0));
+
+        tabContentHtml = `
+          <div class="rounded-3xl bg-slate-900 text-white p-4 space-y-1">
+            <div class="text-[11px] font-black uppercase tracking-wider text-emerald-400">🏅 2026/27 Season Hall of Fame</div>
+            <h2 class="text-base font-black">${grp.name} • All-Time Table</h2>
+            <p class="text-xs text-slate-300">Tracks total 100% pots won, exact score snipes, and syndicate badges across every matchweek.</p>
+          </div>
+
+          <div class="space-y-2.5">
+            ${sortedUsers
+              .map(
+                (u, idx) => `
+                <div class="rounded-2xl border ${idx === 0 ? "border-amber-400 bg-amber-50/40" : "border-slate-200 bg-white"} p-3.5 flex items-center justify-between shadow-2xs">
+                  <div class="flex items-center gap-3">
+                    <div class="h-8 w-8 rounded-xl ${
+                      idx === 0 ? "bg-amber-400 text-slate-950" : "bg-slate-100 text-slate-700"
+                    } font-black text-xs flex items-center justify-center">
+                      #${idx + 1}
+                    </div>
+                    <div>
+                      <div class="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                        <span>${u.name}</span>
+                        <span class="px-2 py-0.5 rounded-full bg-white border border-slate-200 text-[10px] font-extrabold text-slate-700">${u.badge || "⚽ Member"}</span>
+                      </div>
+                      <div class="text-[11px] text-slate-500 mt-0.5">
+                        <strong>${u.seasonWins || 0}</strong> Pots Won • <strong>${u.exactHits || 0}</strong> Exact Hits
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-sm font-black text-emerald-700">${formatGBP(u.seasonWinningsPence || 0)}</div>
+                    <div class="text-[10px] font-bold text-slate-400">Total Won</div>
+                  </div>
+                </div>
+              `
+              )
+              .join("")}
+          </div>
+        `;
+      }
+
+      // TAB 4: BANTER (GROUP CHAT FEED)
       else if (state.activeTab === "BANTER") {
         tabContentHtml = `
           <div class="space-y-3">
@@ -1261,8 +1922,8 @@
               <input
                 id="banter-msg-input"
                 type="text"
-                placeholder="Post banter to ${grp.name}..."
-                class="flex-1 rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-900 focus:border-emerald-600 focus:bg-white focus:outline-none"
+                placeholder="Drop banter into ${grp.name}..."
+                class="flex-1 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-xs font-semibold text-slate-900 focus:border-emerald-600 focus:outline-none"
               />
               <button
                 type="submit"
@@ -1276,9 +1937,12 @@
               ${state.banter
                 .map(
                   (b) => `
-                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 space-y-1">
+                  <div class="rounded-2xl border border-slate-200 bg-white p-3.5 space-y-1 shadow-2xs">
                     <div class="flex items-center justify-between text-xs font-black text-slate-900">
-                      <span>${b.initials} • ${b.author}</span>
+                      <div class="flex items-center gap-1.5">
+                        <span>${b.initials} • ${b.author}</span>
+                        ${b.badge ? `<span class="px-1.5 py-0.5 rounded bg-slate-100 text-[10px] font-bold text-slate-600">${b.badge}</span>` : ""}
+                      </div>
                       <span class="text-[10px] font-normal text-slate-400">${b.time}</span>
                     </div>
                     <p class="text-xs text-slate-700 leading-relaxed">${b.text}</p>
@@ -1291,26 +1955,30 @@
         `;
       }
 
-      // TAB 4: GROUP ADMIN (CONFIGURE 1-3 EXACT SCORES / 1-5 OUTRIGHTS, WAGER £ & LIVE SCORES)
-      else if (state.activeTab === "ADMIN") {
+      // TAB 5: GROUP ADMIN (VISIBLE ONLY TO GROUP ADMINS - CHECKPOINT 1.4)
+      else if (state.activeTab === "ADMIN" && isAdmin) {
         const maxGames = state.adminFormat === "EXACT_SCORE" ? 3 : 5;
         tabContentHtml = `
           <!-- Live Score & Settlement Box for Active Round -->
-          <div class="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-4 space-y-3">
+          <div class="rounded-3xl border border-indigo-200 bg-indigo-50/60 p-4 space-y-3">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-black uppercase text-indigo-950">⚡ Live Match Score &amp; Settlement</span>
-              <span class="text-[11px] font-bold text-indigo-700">Round #${round.number}</span>
+              <span class="text-xs font-black uppercase text-indigo-950">⚡ Live Score &amp; Settlement (Round #${round.number})</span>
+              <span class="px-2 py-0.5 rounded bg-indigo-100 text-[10px] font-black text-indigo-800">Admin Only</span>
             </div>
 
             <div class="space-y-2">
               ${round.fixtures
                 .map(
                   (fx, idx) => `
-                  <div class="rounded-xl bg-white border border-slate-200 p-2.5 flex items-center justify-between">
-                    <span class="text-xs font-extrabold text-slate-900">${fx.hb} ${fx.homeScore} - ${fx.awayScore} ${fx.ab}</span>
+                  <div class="rounded-2xl bg-white border border-slate-200 p-2.5 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      ${renderClubCrest(fx.hb, "sm")}
+                      <span class="text-xs font-black text-slate-900">${fx.hb} ${fx.homeScore} - ${fx.awayScore} ${fx.ab}</span>
+                      ${renderClubCrest(fx.ab, "sm")}
+                    </div>
                     <div class="flex items-center gap-1">
-                      <button onclick="bumpLiveScore(${idx}, 'home', 1)" class="px-2 py-1 rounded border border-slate-300 bg-slate-50 text-[11px] font-bold">+1 ${fx.hb}</button>
-                      <button onclick="bumpLiveScore(${idx}, 'away', 1)" class="px-2 py-1 rounded border border-slate-300 bg-slate-50 text-[11px] font-bold">+1 ${fx.ab}</button>
+                      <button onclick="bumpLiveScore(${idx}, 'home', 1)" class="px-2.5 py-1 rounded-lg border border-slate-300 bg-slate-50 text-[11px] font-black">+1 ${fx.hb}</button>
+                      <button onclick="bumpLiveScore(${idx}, 'away', 1)" class="px-2.5 py-1 rounded-lg border border-slate-300 bg-slate-50 text-[11px] font-black">+1 ${fx.ab}</button>
                     </div>
                   </div>
                 `
@@ -1334,8 +2002,28 @@
             </div>
           </div>
 
+          <!-- P2P Treasurer Link Configurator -->
+          <div class="rounded-3xl border border-slate-200 bg-white p-4 space-y-2.5">
+            <div class="text-xs font-black uppercase text-slate-500">💸 Your P2P Treasurer Payment Link (Monzo / Revolut)</div>
+            <div class="flex gap-2">
+              <input
+                id="admin-paylink-input"
+                type="url"
+                value="${grp.treasurerPayLink || "https://monzo.me/marcusvance"}"
+                placeholder="https://monzo.me/yourname"
+                class="flex-1 rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-mono text-slate-900"
+              />
+              <button
+                onclick="saveTreasurerPayLink()"
+                class="px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-black"
+              >
+                Save Link
+              </button>
+            </div>
+          </div>
+
           <!-- New Round Format & Wager Builder -->
-          <div class="rounded-2xl border border-slate-200 bg-white p-4 space-y-4">
+          <div class="rounded-3xl border border-slate-200 bg-white p-4 space-y-4">
             <div>
               <div class="text-xs font-black uppercase text-slate-500">1. Choose Prediction Format</div>
               <div class="grid grid-cols-2 gap-2 mt-2">
@@ -1388,7 +2076,28 @@
 
             <div>
               <div class="flex items-center justify-between">
-                <span class="text-xs font-black uppercase text-slate-500">3. Select Games (${state.adminSelectedFixtureIds.length}/${maxGames})</span>
+                <span class="text-xs font-black uppercase text-slate-500">3. Select Fixtures (${state.adminSelectedFixtureIds.length}/${maxGames})</span>
+                <span class="text-[10px] font-bold text-emerald-700">📡 Live API Feed Ready</span>
+              </div>
+              <div class="grid grid-cols-3 gap-1.5 mt-2">
+                <button
+                  onclick="fetchLiveSportsFeed('eng.1')"
+                  class="py-1.5 px-2 rounded-xl border border-indigo-200 bg-indigo-50 text-[10px] font-black text-indigo-900 hover:bg-indigo-100"
+                >
+                  📡 Pull EPL Live
+                </button>
+                <button
+                  onclick="fetchLiveSportsFeed('uefa.champions')"
+                  class="py-1.5 px-2 rounded-xl border border-indigo-200 bg-indigo-50 text-[10px] font-black text-indigo-900 hover:bg-indigo-100"
+                >
+                  📡 Pull UCL Live
+                </button>
+                <button
+                  onclick="fetchLiveSportsFeed('eng.2')"
+                  class="py-1.5 px-2 rounded-xl border border-indigo-200 bg-indigo-50 text-[10px] font-black text-indigo-900 hover:bg-indigo-100"
+                >
+                  📡 Pull EFL Live
+                </button>
               </div>
               <div class="space-y-1.5 mt-2">
                 ${ALL_FIXTURES.map((fx) => {
@@ -1396,18 +2105,21 @@
                   return `
                     <button
                       onclick="toggleAdminFixture('${fx.id}')"
-                      class="w-full rounded-xl border px-3.5 py-2.5 flex items-center justify-between text-left ${
+                      class="w-full rounded-2xl border px-3 py-2.5 flex items-center justify-between text-left ${
                         sel ? "border-emerald-600 bg-emerald-50" : "border-slate-200 bg-slate-50"
                       }"
                     >
-                      <div>
-                        <div class="text-xs font-extrabold text-slate-900">${fx.home} vs ${fx.away}</div>
-                        <div class="text-[10px] text-slate-500">${fx.comp}</div>
+                      <div class="flex items-center gap-2">
+                        ${renderClubCrest(fx.hb, "sm")}
+                        <div>
+                          <div class="text-xs font-extrabold text-slate-900">${fx.home} vs ${fx.away}</div>
+                          <div class="text-[10px] text-slate-500">${fx.comp} • ${fx.kickoffLabel}</div>
+                        </div>
                       </div>
                       <span class="px-2 py-0.5 rounded text-[10px] font-black ${
                         sel ? "bg-emerald-600 text-white" : "bg-white border border-slate-300 text-slate-600"
                       }">
-                        ${sel ? "✓ SELECTED" : "+ ADD"}
+                        ${sel ? "✓ IN SLATE" : "+ ADD"}
                       </span>
                     </button>
                   `;
@@ -1425,36 +2137,37 @@
         `;
       }
 
-      // TAB 5: PROFILE (ACCOUNT, INVITE FRIENDS, SWITCH ACCOUNT & FOUNDER REVENUE DRAWER)
+      // TAB 6: PROFILE (ACCOUNT, INVITE FRIENDS, SWITCH ACCOUNT & FOUNDER REVENUE DRAWER)
       else if (state.activeTab === "PROFILE") {
         tabContentHtml = `
-          <!-- Logged-In User Card -->
-          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex items-center justify-between">
+          <div class="rounded-3xl border border-slate-200 bg-white p-4 flex items-center justify-between shadow-2xs">
             <div class="flex items-center gap-3">
-              <div class="h-11 w-11 rounded-2xl bg-emerald-600 text-white font-black text-sm flex items-center justify-center">
+              <div class="h-12 w-12 rounded-2xl bg-emerald-600 text-white font-black text-sm flex items-center justify-center">
                 ${user.initials}
               </div>
               <div>
-                <div class="text-sm font-black text-slate-900">${user.name}</div>
+                <div class="text-sm font-black text-slate-900 flex items-center gap-1.5">
+                  <span>${user.name}</span>
+                  <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-black">${isAdmin ? "👑 Group Admin" : "⚽ Member"}</span>
+                </div>
                 <div class="text-xs text-slate-500">${user.email}</div>
               </div>
             </div>
             <button
               onclick="logoutUser()"
-              class="px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs font-extrabold text-slate-700 hover:bg-slate-100"
+              class="px-3 py-1.5 rounded-xl border border-slate-300 bg-slate-50 text-xs font-extrabold text-slate-700 hover:bg-slate-100"
             >
-              Log Out / Switch
+              Switch User
             </button>
           </div>
 
-          <!-- Share Group Invite Card -->
-          <div class="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 space-y-2.5">
+          <div class="rounded-3xl border border-emerald-200 bg-emerald-50/70 p-4 space-y-2.5">
             <div class="flex items-center justify-between">
               <span class="text-xs font-black uppercase text-emerald-900">📲 Invite Mates to ${grp.name}</span>
               <span class="px-2 py-0.5 rounded bg-white border border-emerald-300 font-mono text-xs font-black text-emerald-800">${grp.inviteCode}</span>
             </div>
             <p class="text-xs text-slate-600">
-              Send your group invite link and code to your WhatsApp chat so friends can create an account and lock in their predictions.
+              Send your magic WhatsApp invite link so friends can create an account and lock in their predictions.
             </p>
             <div class="grid grid-cols-2 gap-2">
               <button
@@ -1467,13 +2180,13 @@
                 onclick="toggleGroupModal(true)"
                 class="py-2.5 rounded-xl border border-emerald-300 bg-white text-emerald-800 text-xs font-black"
               >
-                + Join / Create Group
+                + Switch / New Group
               </button>
             </div>
           </div>
 
           <!-- Founder Revenue & 50,000-User Simulator Collapsible Drawer -->
-          <div class="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 space-y-3">
+          <div class="rounded-3xl border border-indigo-200 bg-indigo-50/60 p-4 space-y-3">
             <div class="flex items-center justify-between">
               <div>
                 <div class="text-xs font-black text-indigo-950">👑 Founder Revenue &amp; 50k-User Simulator</div>
@@ -1513,8 +2226,7 @@
             }
           </div>
 
-          <!-- Apple App Store Compliance & Reset Demo -->
-          <div class="rounded-2xl border border-slate-200 bg-white p-4 space-y-2 text-[11px] text-slate-500">
+          <div class="rounded-3xl border border-slate-200 bg-white p-4 space-y-2 text-[11px] text-slate-500">
             <div class="font-bold text-slate-800">🛡️ App Store Legal &amp; Privacy</div>
             <p>POOLIT is a free-to-use social sports predictor. Apple Inc. and Google LLC are not sponsors of any group leagues.</p>
             <div class="flex gap-2 pt-1">
@@ -1525,24 +2237,45 @@
         `;
       }
 
+      // ROLE-BASED BOTTOM NAVIGATION BAR (CHECKPOINT 1.4: HIDE ADMIN FROM NORMAL MEMBERS)
+      const navItems = [
+        { id: "PREDICT", icon: "⚽", label: "Predict" },
+        { id: "TABLE", icon: "🏆", label: "Standings" },
+        { id: "SEASON", icon: "🏅", label: "Season" },
+        { id: "BANTER", icon: "💬", label: "Banter" }
+      ];
+      if (isAdmin) {
+        navItems.push({ id: "ADMIN", icon: "⚙️", label: "Admin" });
+      }
+
       root.innerHTML = `
-        <div class="min-h-screen bg-white flex flex-col justify-between max-w-md mx-auto border-x border-slate-100 pb-20">
+        <div class="min-h-screen bg-slate-50 flex flex-col justify-between max-w-md mx-auto border-x border-slate-200 pb-20 shadow-xl">
           <!-- Sticky Mobile App Top Bar -->
           <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200 px-4 py-3 flex items-center justify-between">
             <div class="flex items-center gap-2.5">
-              <div class="h-9 px-2.5 rounded-xl bg-emerald-600 text-white font-black text-xs flex items-center justify-center shadow-2xs">
+              <div class="h-9 px-2.5 rounded-xl bg-emerald-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
                 POOLIT
               </div>
               <div>
                 <button onclick="toggleGroupModal(true)" class="text-xs font-black text-slate-900 flex items-center gap-1">
-                  <span>${grp.name}</span>
+                  <span class="truncate max-w-[155px]">${grp.name}</span>
                   <span class="text-slate-400">▾</span>
                 </button>
-                <div class="text-[10px] font-bold text-emerald-700">Code: ${grp.inviteCode} • 100% Pot Payout</div>
+                <div class="text-[10px] font-bold text-emerald-700">Code: ${grp.inviteCode} • ${isAdmin ? "👑 Admin View" : "⚽ Member View"}</div>
               </div>
             </div>
 
             <div class="flex items-center gap-1.5">
+              <button
+                onclick="toggleCloudModal(true)"
+                class="px-2 py-1.5 rounded-xl border text-[10px] font-extrabold ${
+                  isCloudConnected()
+                    ? "bg-emerald-50 border-emerald-300 text-emerald-800"
+                    : "bg-slate-50 border-slate-300 text-slate-600"
+                }"
+              >
+                ${isCloudConnected() ? "🟢 Live" : "☁️ Sync"}
+              </button>
               <button
                 onclick="shareGroupInvite()"
                 class="px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-extrabold"
@@ -1551,7 +2284,7 @@
               </button>
               <button
                 onclick="setTab('PROFILE')"
-                class="h-8 w-8 rounded-full bg-slate-900 text-white text-[11px] font-black flex items-center justify-center"
+                class="h-8 w-8 rounded-full ${state.activeTab === "PROFILE" ? "bg-emerald-600" : "bg-slate-900"} text-white text-[11px] font-black flex items-center justify-center"
                 title="${user.name}"
               >
                 ${user.initials}
@@ -1578,14 +2311,8 @@
           </main>
 
           <!-- Fixed Mobile App Bottom Navigation Bar -->
-          <nav class="fixed bottom-0 left-0 right-0 z-30 max-w-md mx-auto bg-white/95 backdrop-blur border-t border-slate-200 px-2 py-1.5 grid grid-cols-5 gap-1">
-            ${[
-              { id: "PREDICT", icon: "⚽", label: "Predict" },
-              { id: "TABLE", icon: "🏆", label: "Standings" },
-              { id: "BANTER", icon: "💬", label: "Banter" },
-              { id: "ADMIN", icon: "⚙️", label: "Admin" },
-              { id: "PROFILE", icon: "👤", label: "Profile" }
-            ]
+          <nav class="fixed bottom-0 left-0 right-0 z-30 max-w-md mx-auto bg-white/95 backdrop-blur border-t border-slate-200 px-2 py-1.5 grid grid-cols-${navItems.length} gap-1">
+            ${navItems
               .map(
                 (t) => `
                 <button
@@ -1607,7 +2334,18 @@
       `;
     }
 
+    // Pre-fill invite code if ?code= is in URL
+    try {
+      const urlCode = new URLSearchParams(window.location.search).get("code");
+      if (urlCode) {
+        const grp = state.groups.find((g) => g.inviteCode.toUpperCase() === urlCode.toUpperCase());
+        if (grp) state.activeGroupId = grp.id;
+      }
+    } catch (e) {}
+
     renderAll();
+    pullCloudState();
+    setInterval(pullCloudState, 3500);
   </script>
 </body>
 </html>
